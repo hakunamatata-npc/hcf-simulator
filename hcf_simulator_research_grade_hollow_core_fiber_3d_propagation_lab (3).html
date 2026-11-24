@@ -1,0 +1,3949 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>HCF Simulator — Research-Grade Hollow-Core Fiber &amp; 3D Propagation Lab</title>
+<script src="https://cdn.plot.ly/plotly-2.24.2.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400&display=swap" rel="stylesheet" />
+
+<style>
+:root{
+  --bg:#f7f5f0;
+  --surface:#ffffff;
+  --surface-alt:#faf8f4;
+  --sand:#efeae0;
+  --line:#e5e0d8;
+  --line-strong:#cfc7ba;
+  --text:#1c1917;
+  --muted:#6b665f;
+  --accent:#c2410c;
+  --accent-soft:rgba(194,65,12,0.09);
+  --accent-hover:#9a3412;
+  --danger:#b91c1c;
+  --warn:#b45309;
+  --ok:#15803d;
+  --canvas-bg:#0c0d10;
+  --hud-bg:rgba(14,15,19,0.90);
+  --hud-line:rgba(255,255,255,0.14);
+  --hud-text:#f5f5f4;
+  --hud-muted:#a8a29e;
+  --font-serif:'Newsreader',Georgia,'Times New Roman',serif;
+  --font-sans:'Inter',system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+*{ box-sizing:border-box; }
+html, body{ height:100%; margin:0; font-family:var(--font-sans); -webkit-font-smoothing:antialiased; }
+body{
+  color:var(--text); overflow:hidden;
+  background:var(--bg);
+}
+button, input, select{ font:inherit; }
+.hidden{ display:none !important; }
+
+.app{ display:flex; flex-direction:column; height:100vh; }
+
+/* Top Sticky Editorial Header */
+header{
+  display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+  padding:10px 18px;
+  background:var(--surface);
+  border-bottom:1px solid var(--line);
+  z-index:20;
+}
+.brand{
+  font-family:var(--font-serif); font-size:21px; font-weight:700; letter-spacing:-0.01em;
+  color:var(--text); display:flex; align-items:center; gap:10px;
+}
+.brandMark{
+  width:24px; height:24px; border-radius:50%; background:var(--text); color:#fff;
+  display:inline-flex; align-items:center; justify-content:center;
+  font-family:var(--font-mono); font-size:11px; font-weight:700; flex-shrink:0;
+}
+.brandBadge{
+  font-family:var(--font-mono); font-size:10.5px; padding:2px 9px; border-radius:999px;
+  background:#f0fdf4; border:1px solid #15803d; color:#15803d; font-weight:600;
+  letter-spacing:0.02em;
+}
+.tabs{ display:flex; gap:4px; flex-wrap:wrap; }
+.tab{
+  padding:6px 12px; border-radius:7px; background:transparent;
+  border:1px solid transparent; cursor:pointer; font-weight:500;
+  color:var(--muted); font-size:13px; transition:background .15s, color .15s, border-color .15s;
+}
+.tab:hover{ background:var(--surface-alt); color:var(--text); border-color:var(--line); }
+.tab.active{ background:var(--sand); border-color:var(--line-strong); color:var(--text); font-weight:600; }
+
+/* 3-Column Split Lab Workspace */
+.main{ display:flex; flex:1; min-height:0; }
+.left{
+  width:316px; min-width:260px; background:var(--surface);
+  border-right:1px solid var(--line); padding:14px 16px; overflow:auto;
+}
+.center{ flex:1 1 auto; min-width:0; padding:16px; overflow:auto; background:var(--bg); }
+.right{
+  width:344px; min-width:250px; background:var(--surface);
+  border-left:1px solid var(--line); padding:14px 16px; overflow:auto;
+}
+
+.secHeading{
+  font-size:12px; font-weight:700; color:var(--text);
+  padding-bottom:6px; margin:14px 0 10px;
+  border-bottom:1px solid var(--line); letter-spacing:0.01em;
+}
+.secHeading:first-child{ margin-top:0; }
+.secHeading .num{ font-family:var(--font-mono); color:var(--accent); margin-right:4px; }
+
+.control{ margin-bottom:12px; }
+.row{ display:flex; gap:8px; flex-wrap:wrap; }
+.label{
+  font-size:11px; color:var(--muted); font-weight:600; margin-bottom:5px;
+  display:block; letter-spacing:0.03em; text-transform:uppercase;
+}
+
+input, select, textarea{
+  background:var(--surface); color:var(--text);
+  border:1px solid var(--line-strong); border-radius:7px;
+  padding:7px 9px; width:100%; font-size:13px;
+  transition:border-color .15s, box-shadow .15s;
+}
+input[type=number]{ font-family:var(--font-mono); font-size:12.5px; font-variant-numeric:tabular-nums; }
+input:focus, select:focus{ outline:none; border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-soft); }
+input[type=range]{ accent-color:var(--accent); padding:0; cursor:pointer; border:none; }
+
+/* Crisp Flat Editorial Buttons */
+.btn{
+  padding:6px 12px; border-radius:7px; border:1px solid var(--line-strong);
+  background:var(--surface); color:var(--text);
+  cursor:pointer; font-weight:600; font-size:12px; transition:all .15s;
+  display:inline-flex; align-items:center; justify-content:center; gap:5px;
+}
+.btn:hover{ background:var(--surface-alt); border-color:#a8a29e; }
+.btn.primary{ background:#1c1917; color:#ffffff; border-color:#1c1917; }
+.btn.primary:hover{ background:#292524; border-color:#292524; }
+.btn.success{ background:#15803d; color:#ffffff; border-color:#15803d; }
+.btn.success:hover{ background:#166534; }
+.btn.danger{ background:#b91c1c; color:#ffffff; border-color:#b91c1c; }
+.btn.danger:hover{ background:#991b1b; }
+.btn.warn{ background:#b45309; color:#ffffff; border-color:#b45309; }
+.btn.warn:hover{ background:#92400e; }
+.btn.small{ padding:3px 8px; font-size:11px; }
+#lab3DBtn, #openLabFromRight{
+  background:var(--accent); color:#ffffff; border-color:var(--accent);
+}
+#lab3DBtn:hover, #openLabFromRight:hover{
+  background:var(--accent-hover); border-color:var(--accent-hover);
+}
+
+.plotsStack{ display:flex; flex-direction:column; gap:14px; }
+.card{
+  background:var(--surface); border:1px solid var(--line);
+  border-radius:10px; padding:14px 16px; display:flex; flex-direction:column;
+}
+.cardHeader{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:8px; }
+.cardTitle{ font-family:var(--font-serif); font-size:17px; font-weight:600; color:var(--text); letter-spacing:-0.01em; }
+.subtitle{ font-size:12px; color:var(--muted); margin-top:3px; line-height:1.4; }
+.plotActions{ display:flex; gap:6px; flex-wrap:wrap; flex-shrink:0; }
+.plotBox{ position:relative; height:360px; overflow:hidden; border-radius:6px; border:1px solid #f0ece4; background:#ffffff; }
+
+.info{
+  background:var(--surface-alt); border:1px solid var(--line);
+  padding:8px 10px; border-radius:7px; margin-bottom:8px;
+}
+.mono{
+  font-family:var(--font-mono); font-variant-numeric:tabular-nums;
+  margin-top:3px; word-break:break-word; color:var(--text); font-size:11.5px; font-weight:500;
+}
+.muted{ font-size:12px; color:var(--muted); }
+
+.holdsList{ margin-top:6px; max-height:240px; overflow:auto; padding-right:2px; }
+.holdItem{
+  display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:6px;
+  border:1px solid var(--line); background:var(--surface-alt); color:var(--text);
+  margin-bottom:6px; font-size:11.5px;
+}
+.colorSwatch{ width:12px; height:12px; border-radius:3px; border:1px solid rgba(0,0,0,0.15); flex:none; }
+
+/* Right Panel Figure Card (Micro Flamma Fig. 1 Style) */
+.rightTitle{
+  font-family:var(--font-serif); font-size:16px; font-weight:600; color:var(--text);
+  margin:0 0 8px;
+}
+.schemCard{
+  background:var(--surface-alt); border:1px solid var(--line);
+  border-radius:9px; padding:8px; margin-bottom:14px;
+}
+#mainCrossPreview{
+  width:100%; height:164px; display:block; border-radius:6px;
+  background:var(--canvas-bg); border:1px solid #262626;
+}
+
+/* Sticky Bottom Status Footer (Micro Flamma Style) */
+.appFooter{
+  display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+  padding:7px 18px; background:var(--surface); border-top:1px solid var(--line);
+  font-size:11.5px; color:var(--muted); z-index:20;
+}
+.appFooter .footerMeta{
+  font-family:var(--font-mono); font-size:11px; color:var(--text);
+  font-variant-numeric:tabular-nums;
+}
+
+/* Editorial Archival Drawers */
+.drawer{
+  position:fixed; width:590px; max-width:calc(100vw - 24px);
+  height:560px; max-height:calc(100vh - 90px);
+  background:var(--surface);
+  border:1px solid var(--line-strong); color:var(--text);
+  box-shadow:0 16px 40px rgba(28,25,23,0.14); border-radius:10px;
+  display:none; z-index:120; overflow:auto; padding:16px 18px;
+}
+.drawer h3{ font-family:var(--font-serif); font-size:19px; font-weight:600; color:var(--text); }
+#regDrawer{ right:18px; top:70px; }
+#desmosDrawer{ right:54px; top:90px; }
+#inspector{ right:90px; top:110px; }
+
+pre{
+  font-family:var(--font-mono); font-size:11.5px; line-height:1.5;
+  white-space:pre-wrap; word-break:break-word;
+  background:var(--bg); border:1px solid var(--line); color:var(--text);
+  border-radius:7px; padding:9px 11px; margin:0;
+}
+.theory-panel{
+  border:1px solid var(--line); border-radius:8px; background:var(--surface-alt);
+  padding:11px 12px; margin-bottom:10px;
+}
+.theory-panel h4{
+  margin:0 0 6px; font-family:var(--font-serif); font-size:15px; font-weight:600;
+  color:var(--text);
+}
+.theory-panel p{ margin:0 0 8px; font-size:12px; color:var(--muted); line-height:1.5; }
+.cite-link{ color:var(--accent); text-decoration:none; font-weight:600; }
+.cite-link:hover{ text-decoration:underline; }
+
+/* Toast Notification */
+.toast{
+  position:fixed; bottom:42px; right:20px; z-index:999;
+  background:#1c1917; border:1px solid #44403c;
+  color:#fafaf9; padding:9px 15px; border-radius:8px;
+  font-size:12px; font-weight:500; box-shadow:0 10px 24px rgba(0,0,0,0.22);
+  opacity:0; transform:translateY(10px); pointer-events:none;
+  transition:opacity .2s, transform .2s;
+}
+.toast.show{ opacity:1; transform:translateY(0); }
+
+/* =========================================================
+   3D LAB OVERLAY — MICRO FLAMMA DARK TELEMETRY VIEWPORT
+   ========================================================= */
+.lab3D{
+  position:fixed; inset:0; z-index:500; background:var(--canvas-bg);
+  display:none; overflow:hidden; font-family:var(--font-sans); color:var(--hud-text);
+}
+.lab3D.open{ display:block; }
+.lab3D-canvas{ position:absolute; inset:0; cursor:grab; }
+.lab3D-canvas:active{ cursor:grabbing; }
+.lab3D-canvas canvas{ display:block; width:100% !important; height:100% !important; }
+
+/* Dark Canvas Button Overrides inside 3D Lab (Micro Flamma Canvas Controls) */
+.lab3D .btn{
+  background:rgba(15,16,20,0.78); color:#e7e5e4;
+  border:1px solid rgba(255,255,255,0.22); border-radius:7px;
+  font-size:12px; font-weight:600;
+}
+.lab3D .btn:hover{ background:rgba(255,255,255,0.10); border-color:rgba(255,255,255,0.42); color:#ffffff; }
+.lab3D .btn.success{
+  background:#ffffff; color:#111111; border-color:#ffffff; font-weight:700;
+}
+.lab3D .btn.success:hover{ background:#e7e5e4; border-color:#e7e5e4; color:#000000; }
+.lab3D .btn.warn{
+  background:rgba(245,158,11,0.14); color:#fbbf24; border-color:rgba(245,158,11,0.45);
+}
+.lab3D .btn.warn:hover{ background:rgba(245,158,11,0.24); }
+.lab3D .btn.primary{
+  background:rgba(234,88,12,0.16); color:#fdba74; border-color:rgba(234,88,12,0.5);
+}
+.lab3D .btn.primary:hover{ background:rgba(234,88,12,0.28); color:#ffffff; }
+.lab3D .btn.danger{
+  background:rgba(239,68,68,0.14); color:#fca5a5; border-color:rgba(239,68,68,0.42);
+}
+.lab3D .btn.danger:hover{ background:rgba(239,68,68,0.28); color:#ffffff; }
+
+.lab3D-top{
+  position:absolute; top:14px; left:14px; right:14px;
+  display:flex; justify-content:space-between; align-items:flex-start; gap:10px;
+  pointer-events:none; z-index:525;
+}
+.lab3D-title{
+  font-family:var(--font-serif); font-size:15px; font-weight:600; color:var(--hud-text);
+  background:var(--hud-bg); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+  padding:8px 14px; border-radius:9px;
+  border:1px solid var(--hud-line);
+  pointer-events:auto; letter-spacing:0.01em;
+  display:flex; align-items:center; gap:10px;
+  max-width:calc(100vw - 290px);
+  white-space:nowrap; overflow:hidden;
+}
+.lab3D-title .dot{ width:7px; height:7px; border-radius:50%; background:#22c55e; animation:pulse 1.8s infinite; flex-shrink:0; }
+@keyframes pulse{ 0%,100%{opacity:1} 50%{opacity:0.35} }
+.lab3D-top .topActions{ display:flex; gap:7px; pointer-events:auto; align-items:center; }
+.liveBadge{
+  font-family:var(--font-mono); background:rgba(21,128,61,0.18); color:#4ade80;
+  padding:2px 8px; border-radius:999px; font-size:9.5px; font-weight:600;
+  letter-spacing:0.06em; border:1px solid rgba(74,222,128,0.45); flex-shrink:0;
+}
+.liveSummary{
+  font-family:var(--font-mono); color:var(--hud-muted); font-size:11px; font-weight:400;
+  overflow:hidden; text-overflow:ellipsis; min-width:0;
+}
+
+/* Floating Telemetry HUD Overlay (Top-Right — Micro Flamma Empirical Telemetry Style) */
+.labTrackerHud{
+  position:absolute; right:14px; top:60px;
+  width:342px; max-width:calc(100vw - 28px);
+  background:var(--hud-bg); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+  border:1px solid var(--hud-line); border-radius:10px;
+  padding:12px 14px; color:var(--hud-text); z-index:520;
+}
+.trackerHeader{
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:9px; padding-bottom:7px; border-bottom:1px solid rgba(255,255,255,0.10);
+}
+.trackerTitle{
+  font-family:var(--font-mono); font-size:10.5px; font-weight:600;
+  text-transform:uppercase; letter-spacing:0.08em; color:#e7e5e4;
+  display:flex; align-items:center; gap:6px;
+}
+.trackerStateBadge{
+  font-family:var(--font-mono); font-size:9.5px; font-weight:700;
+  padding:2px 8px; border-radius:999px; letter-spacing:0.06em;
+}
+.trackerStateBadge.running{ background:rgba(21,128,61,0.2); color:#4ade80; border:1px solid rgba(74,222,128,0.45); }
+.trackerStateBadge.paused{ background:rgba(217,119,6,0.2); color:#fbbf24; border:1px solid rgba(251,191,36,0.45); }
+
+.trackerMetricsGrid{ display:grid; grid-template-columns:repeat(2,1fr); gap:7px; margin-bottom:9px; }
+.trackerMetricCard{
+  background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.10);
+  border-radius:7px; padding:7px 9px;
+}
+.trackerMetricCard .mk{
+  font-size:9.5px; color:var(--hud-muted); text-transform:uppercase;
+  font-weight:600; letter-spacing:0.04em;
+}
+.trackerMetricCard .mv{
+  font-size:14.5px; font-weight:700; font-family:var(--font-mono);
+  font-variant-numeric:tabular-nums; color:#fafaf9; margin-top:2px;
+}
+.trackerMetricCard .mv.accent{ color:#fb923c; }
+.trackerMetricCard .mv.ok{ color:#4ade80; }
+.trackerMetricCard .mv.warn{ color:#fbbf24; }
+.trackerMetricCard .mv.danger{ color:#f87171; }
+
+.trackerBtns{ display:flex; gap:6px; flex-wrap:wrap; }
+.trackerBtns .btn{ flex:1; padding:6px 8px; font-size:11px; }
+
+/* Bottom Canvas Controls Bar (Micro Flamma Style) */
+.lab3D-controls{
+  position:absolute; bottom:14px; left:14px; right:14px;
+  display:flex; gap:16px; align-items:flex-end; justify-content:space-between;
+  background:var(--hud-bg); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+  border:1px solid var(--hud-line); border-radius:10px;
+  padding:11px 16px; color:var(--hud-text); font-size:12px; z-index:515;
+  flex-wrap:wrap;
+}
+.lab3D-ctrlGroup{ display:flex; gap:18px; align-items:flex-end; flex-wrap:wrap; }
+.lab3D-ctrl{ display:flex; flex-direction:column; gap:5px; min-width:140px; }
+.lab3D-ctrl label{
+  font-family:var(--font-mono); font-weight:600; color:var(--hud-muted);
+  font-size:10px; letter-spacing:0.06em; text-transform:uppercase;
+  display:flex; justify-content:space-between; align-items:center;
+}
+.lab3D-ctrl .inline{ display:flex; align-items:center; gap:8px; }
+.lab3D-ctrl input[type=range]{ flex:1; min-width:95px; accent-color:#ea580c; cursor:pointer; }
+.lab3D-ctrl select{
+  background:#141519; color:#f5f5f4;
+  border:1px solid rgba(255,255,255,0.2); border-radius:7px;
+  padding:6px 10px; font-size:12px; font-weight:500;
+  min-width:215px; cursor:pointer; width:auto;
+}
+.lab3D-val{
+  font-family:var(--font-mono); color:#fb923c; font-weight:700;
+  font-variant-numeric:tabular-nums; min-width:58px; text-align:right; font-size:11.5px;
+}
+.orbitHint{
+  font-family:var(--font-mono); font-size:11px; color:var(--hud-muted);
+  align-self:center; white-space:nowrap;
+}
+
+/* Left Draggable Telemetry Inspector inside 3D Lab */
+.labInspector{
+  position:absolute; left:14px; top:60px;
+  width:385px; height:490px; min-width:290px; min-height:240px;
+  background:var(--hud-bg); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+  border:1px solid var(--hud-line); border-radius:10px;
+  display:flex; flex-direction:column;
+  color:var(--hud-text); z-index:520; overflow:hidden;
+}
+.labInspector-header{
+  display:flex; align-items:center; gap:6px;
+  padding:8px 10px; border-bottom:1px solid rgba(255,255,255,0.12);
+  cursor:move; user-select:none;
+  background:rgba(255,255,255,0.03);
+  flex-shrink:0;
+}
+.labInspector-title{
+  font-family:var(--font-mono); font-weight:700; font-size:10px;
+  color:#e7e5e4; letter-spacing:0.08em; text-transform:uppercase; flex-shrink:0;
+}
+.labInspector-tabs{ display:flex; gap:3px; flex:1; margin-left:4px; overflow-x:auto; scrollbar-width:none; }
+.labInspector-tabs::-webkit-scrollbar{ display:none; }
+.labTab{
+  background:transparent; border:1px solid transparent; color:var(--hud-muted);
+  padding:4px 8px; border-radius:6px; cursor:pointer; font-size:10.5px; font-weight:600;
+  white-space:nowrap; transition:all .15s;
+}
+.labTab:hover{ color:#ffffff; background:rgba(255,255,255,0.07); }
+.labTab.active{ color:#fb923c; background:rgba(234,88,12,0.14); border-color:rgba(234,88,12,0.45); }
+.labInspector-collapse{
+  background:transparent; border:1px solid rgba(255,255,255,0.22); color:#e7e5e4;
+  width:22px; height:22px; border-radius:5px; cursor:pointer; font-size:14px;
+  line-height:1; font-weight:700; flex-shrink:0;
+}
+.labInspector-collapse:hover{ background:rgba(255,255,255,0.12); }
+.labInspector-body{
+  flex:1; overflow:auto; padding:11px; font-size:12px;
+  scrollbar-width:thin; scrollbar-color:rgba(255,255,255,0.22) transparent;
+}
+.labInspector-body.collapsed{ display:none; }
+.labPane{ display:none; height:100%; }
+.labPane.active{ display:block; }
+.labRow{
+  display:flex; justify-content:space-between; gap:8px; padding:5px 0;
+  border-bottom:1px dashed rgba(255,255,255,0.10); font-size:11.5px; align-items:center;
+}
+.labRow:last-child{ border-bottom:none; }
+.labRow .k{ color:var(--hud-muted); }
+.labRow .v{
+  color:#fafaf9; font-family:var(--font-mono); font-variant-numeric:tabular-nums;
+  font-weight:500; font-size:11px; text-align:right;
+}
+.labRow .v.warn{ color:#fbbf24; }
+.labRow .v.hot{ color:#f87171; }
+.labRow .v.ok{ color:#4ade80; }
+.labSection{
+  font-family:var(--font-mono); color:#fb923c; font-weight:700; font-size:10px;
+  letter-spacing:0.10em; text-transform:uppercase; margin:11px 0 5px;
+}
+.labSection:first-child{ margin-top:0; }
+.labInspector-resize{
+  position:absolute; right:0; bottom:0; width:16px; height:16px;
+  cursor:nwse-resize;
+  background:linear-gradient(135deg, transparent 45%, rgba(255,255,255,0.32) 45%, rgba(255,255,255,0.32) 55%, transparent 55%, transparent 70%, rgba(255,255,255,0.32) 70%, rgba(255,255,255,0.32) 80%, transparent 80%);
+  border-bottom-right-radius:10px; z-index:2;
+}
+#labChart, #labCrossCanvas{ width:100%; height:100%; display:block; border-radius:7px; background:#090a0d; border:1px solid rgba(255,255,255,0.08); }
+.labPane[data-labpane="chart"]{ padding:0; min-height:200px; }
+.labPane[data-labpane="cross"]{ padding:0; min-height:260px; display:none; flex-direction:column; gap:8px; }
+.labPane[data-labpane="cross"].active{ display:flex; }
+.labPushBtn{
+  background:rgba(234,88,12,0.16); border:1px solid rgba(234,88,12,0.5); color:#fdba74;
+  padding:6px 10px; border-radius:6px; font-size:11px; font-weight:600;
+  cursor:pointer; margin-top:8px; width:100%; transition:background .15s;
+}
+.labPushBtn:hover{ background:rgba(234,88,12,0.28); color:#ffffff; }
+
+/* Mirror Quick-Controls inside 3D Lab Mirror Tab */
+.mirrorGrid{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:6px; }
+.mirrorField{ display:flex; flex-direction:column; gap:3px; }
+.mirrorField label{ font-family:var(--font-mono); font-size:9.5px; color:var(--hud-muted); font-weight:600; text-transform:uppercase; letter-spacing:0.05em; }
+.mirrorField input, .mirrorField select{
+  padding:5px 7px; font-size:11.5px; border-radius:6px;
+  background:#141519; color:#f5f5f4; border:1px solid rgba(255,255,255,0.18);
+}
+
+@media (max-width:1000px){
+  body{ overflow:auto; }
+  .app{ height:auto; min-height:100vh; }
+  .main{ flex-direction:column; }
+  .left, .right{ width:100%; max-width:none; border:none; border-bottom:1px solid var(--line); }
+  .center{ overflow:visible; }
+  .labTrackerHud{ top:auto; bottom:135px; right:10px; width:300px; }
+}
+</style>
+</head>
+
+<body>
+<div id="app" class="app">
+  <header>
+    <div class="row" style="align-items:center;gap:12px">
+      <div class="brand">
+        <span class="brandMark">λ</span>
+        <span>HCF Simulator</span>
+        <span class="brandBadge">v3.0 Strict · SSFM-GNLSE</span>
+      </div>
+      <div class="tabs" role="tablist">
+        <button class="tab active" data-tab="spect">Spectrum &amp; Dispersion</button>
+        <button class="tab" data-tab="atten">Attenuation &amp; Breakdown</button>
+        <button class="tab" data-tab="lasing">Nonlinear Conversion &amp; Thermal</button>
+        <button class="tab" data-tab="all">All Charts</button>
+      </div>
+    </div>
+    <div class="row" style="align-items:center">
+      <button class="btn" data-toggle="inspector">Inspector &amp; Citations</button>
+      <button class="btn" data-toggle="regDrawer">Regression</button>
+      <button class="btn" id="lab3DBtn" title="Open the interactive 3D propagation lab">3D Lab</button>
+      <button class="btn" data-toggle="desmosDrawer">Desmos</button>
+      <button id="snapshotBtn" class="btn primary" title="Download settings and holds as JSON">Snapshot</button>
+      <button id="loadBtn" class="btn" title="Restore a snapshot JSON">Load</button>
+      <input id="loadFile" type="file" accept="application/json,.json" class="hidden" />
+    </div>
+  </header>
+
+  <div class="main">
+    <aside class="left" id="controls">
+      <div class="secHeading"><span class="num">1 ·</span> Waveguide &amp; Gas Medium</div>
+      <div class="control">
+        <label class="label" for="fiberModel">Fiber Architecture (Mirrored to 3D Lab)</label>
+        <select id="fiberModel">
+          <option value="capillary_simple">Capillary (Marcatili-Schmeltzer)</option>
+          <option value="antiresonant" selected>Anti-resonant (7-Tube AR-HCF)</option>
+          <option value="photonic_bandgap">Photonic bandgap (19-Cell HC-PBGF)</option>
+          <option value="nested_ar">Nested anti-resonant (Poletti NANF)</option>
+          <option value="nanobore">Nanobore (Tight-Confinement HCF)</option>
+        </select>
+      </div>
+
+      <div class="control">
+        <label class="label" for="gasSpecies">Gas Species (Börzsönyi Sellmeier)</label>
+        <select id="gasSpecies">
+          <option>Air</option><option selected>Argon</option><option>Xenon</option><option>Helium</option><option>Neon</option>
+        </select>
+      </div>
+
+      <div class="secHeading"><span class="num">2 ·</span> Operating Conditions</div>
+      <div class="control">
+        <label class="label" for="pressureNum">Gas Pressure (bar)</label>
+        <input id="pressure" type="range" min="0" max="10" step="0.01" value="1" />
+        <input id="pressureNum" type="number" min="0" max="10" step="0.01" value="1" style="margin-top:6px" />
+      </div>
+
+      <div class="control">
+        <label class="label" for="temperatureNum">Temperature (°C)</label>
+        <input id="temperature" type="range" min="-20" max="80" step="0.1" value="20" />
+        <input id="temperatureNum" type="number" min="-20" max="80" step="0.1" value="20" style="margin-top:6px" />
+      </div>
+
+      <div class="control">
+        <label class="label" for="peakPowerNum">Peak Power (MW)</label>
+        <input id="peakPower" type="range" min="0.1" max="150" step="0.5" value="2.5" />
+        <input id="peakPowerNum" type="number" min="0.1" max="150" step="0.5" value="2.5" style="margin-top:6px" />
+      </div>
+
+      <div class="control">
+        <label class="label" for="lambdaCenter">Central Wavelength λ₀ (nm)</label>
+        <input id="lambdaCenter" type="number" min="200" max="2000" step="1" value="800" />
+      </div>
+
+      <div class="secHeading"><span class="num">3 ·</span> Spectral &amp; Core Domain</div>
+      <div class="control">
+        <label class="label">Wavelength Domain (nm)</label>
+        <div class="row" style="flex-wrap:nowrap">
+          <input id="lambdaMin" type="number" value="250" aria-label="Wavelength min" />
+          <input id="lambdaMax" type="number" value="1800" aria-label="Wavelength max" />
+        </div>
+      </div>
+
+      <div class="control">
+        <label class="label">Detuning Domain Δν (THz)</label>
+        <div class="row" style="flex-wrap:nowrap">
+          <input id="detMin" type="number" value="-150" aria-label="Detuning min" />
+          <input id="detMax" type="number" value="150" aria-label="Detuning max" />
+        </div>
+      </div>
+
+      <div class="control">
+        <label class="label" for="coreDiaNum">Core Diameter 2a (μm)</label>
+        <input id="coreDia" type="range" min="10" max="50" step="1" value="35" />
+        <input id="coreDiaNum" type="number" min="10" max="50" step="1" value="35" style="margin-top:6px" />
+      </div>
+
+      <div class="secHeading"><span class="num">4 ·</span> Simulation Actions</div>
+      <div class="control row">
+        <button id="applyBtn" class="btn primary">Apply</button>
+        <button id="resetAxesAll" class="btn">Reset Axes</button>
+      </div>
+
+      <div class="control row">
+        <button id="holdBtn" class="btn">Hold</button>
+        <button id="clearHoldBtn" class="btn">Clear Holds</button>
+      </div>
+
+      <div class="control row">
+        <button id="extendBtn" class="btn">Extend ×2</button>
+        <button id="shrinkBtn" class="btn">Shrink ÷2</button>
+        <button id="clampBtn" class="btn">Clamp Safe</button>
+      </div>
+
+      <div class="info">
+        <div class="label">Operating Status</div>
+        <div id="statusBox" style="font-weight:700;color:#15803d;font-size:12.5px">Stable operation</div>
+      </div>
+    </aside>
+
+    <section class="center">
+      <div class="plotsStack">
+        <div class="card groupContainer" data-tab="spect">
+          <div class="cardHeader">
+            <div><div class="cardTitle">Numerical Split-Step Fourier (SSFM) Output Spectrum</div>
+              <div class="subtitle">512-Point Cooley-Tukey FFT integrating GNLSE (Kerr SPM + Dispersion β₂,β₃ + Self-Steepening + Raman f_R)</div></div>
+            <div class="plotActions"><button class="btn" data-reset="spmPlot">Reset Axes</button><button class="btn" data-png="spmPlot">PNG</button></div>
+          </div>
+          <div id="spmPlot" class="plotBox"></div>
+        </div>
+
+        <div class="card groupContainer" data-tab="spect">
+          <div class="cardHeader">
+            <div><div class="cardTitle">Chromatic Dispersion (Marcatili–Schmeltzer + 2-Term Börzsönyi Sellmeier)</div>
+              <div class="subtitle">Anomalous Waveguide D_wg &gt; 0 + Normal Gas D_gas &lt; 0 (left axis) &amp; D_gas zoom (right axis), with Zero-Dispersion Wavelength (ZDW)</div></div>
+            <div class="plotActions"><button class="btn" data-reset="dispPlot">Reset Axes</button><button class="btn" data-png="dispPlot">PNG</button></div>
+          </div>
+          <div id="dispPlot" class="plotBox"></div>
+        </div>
+
+        <div class="card groupContainer hidden" data-tab="atten">
+          <div class="cardHeader">
+            <div><div class="cardTitle">Exact Analytical Confinement, ARROW Resonance &amp; Rayleigh Loss</div>
+              <div class="subtitle">Marcatili HE₁₁ Grazing Loss + Fabry-Pérot Thin-Wall ARROW Resonances + King-Corrected Rayleigh Scattering α (dB/m)</div></div>
+            <div class="plotActions"><button class="btn" data-reset="lossPlot">Reset Axes</button><button class="btn" data-png="lossPlot">PNG</button></div>
+          </div>
+          <div id="lossPlot" class="plotBox"></div>
+        </div>
+
+        <div class="card groupContainer hidden" data-tab="atten">
+          <div class="cardHeader">
+            <div><div class="cardTitle">Keldysh Photoionization (γ_K) &amp; Cascade Avalanche Breakdown Threshold</div>
+              <div class="subtitle">Raizer / Yablonovitch Inverse-Bremsstrahlung Cascade + Multiphoton / Tunneling Limit I_th(P) (W/cm²)</div></div>
+            <div class="plotActions"><button class="btn" data-reset="breakPlot">Reset Axes</button><button class="btn" data-png="breakPlot">PNG</button></div>
+          </div>
+          <div id="breakPlot" class="plotBox"></div>
+        </div>
+
+        <div class="card groupContainer hidden" data-tab="lasing">
+          <div class="cardHeader">
+            <div><div class="cardTitle">Parametric FWM / Dispersive-Wave (Noble Gas) &amp; Stimulated Raman (Air) Output</div>
+              <div class="subtitle">Phase-Matched Four-Wave Mixing (Ar, Xe, He, Ne at Δβ = 0) &amp; Dicke-Narrowed Rotational/Vibrational SRS (Air N₂/O₂)</div></div>
+            <div class="plotActions"><button class="btn" data-reset="gainPlot">Reset Axes</button><button class="btn" data-png="gainPlot">PNG</button></div>
+          </div>
+          <div id="gainPlot" class="plotBox"></div>
+        </div>
+
+        <div class="card groupContainer hidden" data-tab="lasing">
+          <div class="cardHeader">
+            <div><div class="cardTitle">Lorentz–Lorenz Thermal Density Drift &amp; Fused-Silica Bore Expansion</div>
+              <div class="subtitle">Isobaric Gas Density ρ_rel(T) (left axis) and Thermal Core Expansion Δa = 2a·α_SiO₂·ΔT (μm, right axis)</div></div>
+            <div class="plotActions"><button class="btn" data-reset="thermPlot">Reset Axes</button><button class="btn" data-png="thermPlot">PNG</button></div>
+          </div>
+          <div id="thermPlot" class="plotBox"></div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="right">
+      <div class="rightTitle">Fig. 1 · Fiber &amp; Laser Schematic</div>
+      <div class="schemCard">
+        <canvas id="mainCrossPreview"></canvas>
+        <div id="mainSchemCaption" class="muted" style="margin-top:6px;font-size:11px;text-align:center">—</div>
+      </div>
+
+      <div class="rightTitle">Empirical &amp; Analytical Telemetry</div>
+      <div class="info"><div class="label">Operating Point</div><div id="opPoint" class="mono">—</div></div>
+      <div class="info"><div class="label">Zero-Dispersion λ_ZDW &amp; GVD β₂(λ₀)</div><div id="zdwVal" class="mono">—</div></div>
+      <div class="info"><div class="label">Soliton Order N &amp; Lengths (L_D / L_NL)</div><div id="solitonVal" class="mono">—</div></div>
+      <div class="info"><div class="label">Breakdown I_th &amp; Keldysh γ_K</div><div id="IthVal" class="mono">—</div></div>
+      <div class="info"><div class="label">Peak Core Intensity (I_peak)</div><div id="IpeakVal" class="mono">—</div></div>
+      <div class="info"><div class="label">Best-View Padding</div><div id="padVal" class="mono">—</div></div>
+
+      <div style="margin-top:10px;display:flex;flex-direction:column;gap:7px">
+        <button class="btn" id="openLabFromRight">Open Interactive 3D Lab</button>
+        <button class="btn" data-open="inspector">Open Equations &amp; Citations</button>
+        <button class="btn" data-open="regDrawer">Open Regression</button>
+        <button class="btn" data-open="desmosDrawer">Open Desmos</button>
+      </div>
+
+      <div style="margin-top:14px">
+        <div class="label">Holds (frozen parameter sets, recomputed on current domain)</div>
+        <div id="holdsList" class="holdsList"></div>
+      </div>
+    </aside>
+  </div>
+  <footer class="appFooter">
+    <span>Hollow-Core Fiber Physics Workbench · Marcatili–Schmeltzer HE₁₁, Börzsönyi Sellmeier &amp; 512-pt SSFM-GNLSE</span>
+    <span class="footerMeta" id="footerMeta">5 Fiber Models · 5 Gases · 10 Laser Injectors</span>
+  </footer>
+</div>
+
+<!-- Regression Drawer -->
+<div id="regDrawer" class="drawer">
+  <div class="row" style="justify-content:space-between;align-items:center">
+    <h3 style="margin:0">Regression &amp; Curve Fitting</h3>
+    <button class="btn" data-close="regDrawer">Close</button>
+  </div>
+  <div style="margin-top:12px">
+    <label class="label" for="regPlotSelect">Target Plot</label>
+    <select id="regPlotSelect">
+      <option value="spmPlot">SSFM Frequency Detuning Spectrum</option>
+      <option value="dispPlot">Chromatic Dispersion Profile</option>
+      <option value="lossPlot">Wavelength-dependent Loss</option>
+      <option value="breakPlot">Pressure vs Breakdown Threshold</option>
+      <option value="gainPlot">Nonlinear Conversion / Lasing vs Pressure</option>
+      <option value="thermPlot">Thermal Drift Sensitivity</option>
+    </select>
+
+    <label class="label" for="regSeries" style="margin-top:8px">Series (x and y taken from the same trace)</label>
+    <select id="regSeries"></select>
+
+    <label class="label" for="regType" style="margin-top:8px">Regression Model</label>
+    <select id="regType">
+      <option value="linear">Linear (y = a·x + b)</option>
+      <option value="poly">Polynomial (Chebyshev-scaled degree 1–12)</option>
+      <option value="exp">Exponential (y = A·exp(B·x))</option>
+      <option value="log">Logarithmic (y = A + B·ln(x))</option>
+    </select>
+
+    <div id="polyWrap" class="hidden" style="margin-top:8px">
+      <label class="label" for="polyDegree">Polynomial Degree (1–12)</label>
+      <input id="polyDegree" type="number" value="3" min="1" max="12" />
+    </div>
+
+    <div class="row" style="margin-top:10px">
+      <button id="doFit" class="btn primary">Fit &amp; Overlay on Plot</button>
+      <button id="clearFit" class="btn">Clear Fit</button>
+    </div>
+
+    <label class="label" style="margin-top:10px">Fitted Expression &amp; Goodness of Fit</label>
+    <pre id="fittedExpr" style="min-height:86px"></pre>
+
+    <div class="row" style="margin-top:10px">
+      <button id="sendToDesmos" class="btn primary">Send Fit to Desmos</button>
+      <button class="btn" data-open="desmosDrawer">Show Desmos</button>
+    </div>
+  </div>
+</div>
+
+<!-- Desmos Drawer -->
+<div id="desmosDrawer" class="drawer" aria-hidden="true">
+  <div class="row" style="justify-content:space-between;align-items:center">
+    <h3 style="margin:0">Desmos Graphing Calculator</h3>
+    <button class="btn" data-close="desmosDrawer">Close</button>
+  </div>
+  <div id="desmosMsg" class="muted" style="margin-top:6px"></div>
+  <div id="desmosCalc" style="height:calc(100% - 70px);min-height:300px;margin-top:8px"></div>
+</div>
+
+<!-- Equation Inspector Drawer -->
+<div id="inspector" class="drawer">
+  <div class="row" style="justify-content:space-between;align-items:center">
+    <h3 style="margin:0">Research-Grade Equations &amp; Literature Citations</h3>
+    <button class="btn" data-close="inspector">Close</button>
+  </div>
+  <div id="equationBlocks" style="margin-top:12px"></div>
+</div>
+
+<!-- 3D Lab Fullscreen View -->
+<div id="lab3D" class="lab3D" aria-hidden="true">
+  <div id="lab3DCanvas" class="lab3D-canvas"></div>
+
+  <div class="lab3D-top">
+    <div class="lab3D-title">
+      <span class="dot" id="labSyncDot"></span>
+      <span>3D Lab · Hollow-Core Fiber</span>
+      <span class="liveBadge">● MIRROR SYNCED</span>
+      <span class="liveSummary" id="labLiveSummary">—</span>
+    </div>
+    <div class="topActions">
+      <button class="btn" id="labResetCamBtn" title="Reset 3D camera angle">Reset View</button>
+      <button class="btn" id="labCutawayBtn" title="Toggle cladding cutaway to inspect internal core rays">Cutaway: ON</button>
+      <button class="btn danger" id="lab3DClose">✕ Close 3D Lab</button>
+    </div>
+  </div>
+
+  <!-- Live Light / Pulse Arrival Tracker HUD (Start / Stop / Reset / Download) -->
+  <div class="labTrackerHud" id="labTrackerHud">
+    <div class="trackerHeader">
+      <div class="trackerTitle">
+        <span>⚡ Light Arrival Tracker</span>
+      </div>
+      <span id="trackerStateBadge" class="trackerStateBadge running">TRACKING</span>
+    </div>
+
+    <div class="trackerMetricsGrid">
+      <div class="trackerMetricCard">
+        <div class="mk">Lights Coming (Arrived)</div>
+        <div class="mv accent" id="trkArrivedCount">0</div>
+      </div>
+      <div class="trackerMetricCard">
+        <div class="mk">Arrival Rate</div>
+        <div class="mv ok" id="trkArrivalRate">0 /s</div>
+      </div>
+      <div class="trackerMetricCard">
+        <div class="mk">Active Confined / Total</div>
+        <div class="mv" id="trkConfinedRatio">0 / 0</div>
+      </div>
+      <div class="trackerMetricCard">
+        <div class="mk">Leaked / Absorbed</div>
+        <div class="mv warn" id="trkLostSummary">0 / 0</div>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;font-size:10.5px;color:#94a3b8;margin-bottom:8px;padding:0 2px;">
+      <span>Elapsed: <strong id="trkElapsed" style="color:#e2e8f0">0.0 s</strong></span>
+      <span>Samples: <strong id="trkSamples" style="color:#e2e8f0">0</strong></span>
+      <span>Transmitted: <strong id="trkTransPct" style="color:#4ade80">100%</strong></span>
+    </div>
+
+    <div class="trackerBtns">
+      <button class="btn success" id="trkStartBtn" title="Start or resume propagation and light arrival tracking">▶ Start</button>
+      <button class="btn warn" id="trkStopBtn" title="Pause propagation and freeze light arrival counter">⏸ Stop</button>
+      <button class="btn" id="trkResetBtn" title="Reset light arrival counters and clear recorded log">↺ Reset</button>
+      <button class="btn primary" id="trkDownloadCsvBtn" title="Download tracked light arrival time-series as CSV">⬇ CSV</button>
+      <button class="btn primary" id="trkDownloadJsonBtn" title="Download full tracking telemetry &amp; parameters as JSON">⬇ JSON</button>
+    </div>
+  </div>
+
+  <!-- Bottom Internal 3D Lab Controls -->
+  <div class="lab3D-controls">
+    <div class="lab3D-ctrlGroup">
+    <div class="lab3D-ctrl">
+      <label for="lab3DLen"><span>Cable Length (Lab)</span></label>
+      <div class="inline">
+        <input type="range" id="lab3DLen" min="0" max="100" step="1" value="60" />
+        <span class="lab3D-val" id="lab3DLenVal">1.00 km</span>
+      </div>
+    </div>
+    <div class="lab3D-ctrl">
+      <label for="lab3DInjector"><span>Light Injector (Lab)</span></label>
+      <select id="lab3DInjector"></select>
+    </div>
+    <div class="lab3D-ctrl">
+      <label for="lab3DRays"><span>Rays / Pulses (Lab)</span></label>
+      <div class="inline">
+        <input type="range" id="lab3DRays" min="50" max="5000" step="50" value="900" />
+        <span class="lab3D-val" id="lab3DRaysVal">900</span>
+      </div>
+    </div>
+    <div class="lab3D-ctrl">
+      <label for="lab3DBright"><span>Light Intensity Boost</span></label>
+      <div class="inline">
+        <input type="range" id="lab3DBright" min="0.5" max="4.0" step="0.1" value="2.2" />
+        <span class="lab3D-val" id="lab3DBrightVal">2.2×</span>
+      </div>
+    </div>
+    </div>
+    <div class="orbitHint">drag to orbit · scroll to zoom</div>
+  </div>
+
+  <!-- Left Draggable Inspector inside 3D Lab -->
+  <div id="labInspector" class="labInspector">
+    <div class="labInspector-header" id="labInspectorHeader">
+      <span class="labInspector-title">3D Lab Inspector</span>
+      <div class="labInspector-tabs">
+        <button class="labTab active" data-labtab="cross">2D Cross-Section</button>
+        <button class="labTab" data-labtab="mirror">Main Mirror</button>
+        <button class="labTab" data-labtab="telemetry">Telemetry</button>
+        <button class="labTab" data-labtab="injector">Injector</button>
+        <button class="labTab" data-labtab="material">Waveguide</button>
+        <button class="labTab" data-labtab="chart">Loss Curve</button>
+      </div>
+      <button class="labInspector-collapse" id="labInspectorCollapse" title="Collapse">−</button>
+    </div>
+    <div class="labInspector-body" id="labInspectorBody">
+      <div class="labPane active" data-labpane="cross">
+        <div style="height:245px;flex-shrink:0;">
+          <canvas id="labCrossCanvas"></canvas>
+        </div>
+        <div id="labCrossInfo" style="font-size:11px;color:#cbd5e1;line-height:1.45;background:rgba(10,15,29,0.6);padding:8px;border-radius:8px;border:1px solid rgba(56,189,248,0.15);"></div>
+      </div>
+      <div class="labPane" data-labpane="mirror" id="labMirrorPane"></div>
+      <div class="labPane" data-labpane="telemetry" id="labTelemetryPane"></div>
+      <div class="labPane" data-labpane="injector" id="labInjectorPane"></div>
+      <div class="labPane" data-labpane="material" id="labMaterialPane"></div>
+      <div class="labPane" data-labpane="chart">
+        <canvas id="labChart"></canvas>
+      </div>
+    </div>
+    <div class="labInspector-resize" id="labInspectorResize"></div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+(() => {
+"use strict";
+
+function showToast(msg, duration = 3200){
+  const el = document.getElementById('toast');
+  if(!el) return;
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => el.classList.remove('show'), duration);
+}
+
+/* =========================================================
+   MODULE 1 — RESEARCH-GRADE PHYSICS ENGINE
+   ========================================================= */
+const Core = (() => {
+  const c = 299792458;            // Speed of light in vacuum (m/s)
+  const hbar = 1.054571817e-34;   // Reduced Planck constant (J·s)
+  const eCharge = 1.602176634e-19;// Elementary charge (C)
+  const mElec = 9.1093837015e-31; // Electron mass (kg)
+  const eps0 = 8.8541878128e-12;  // Vacuum permittivity (F/m)
+  const kBoltz = 1.380649e-23;    // Boltzmann constant (J/K)
+  const SILICA_ALPHA = 5.5e-7;    // Fused silica thermal expansion coefficient (K^-1)
+  const U11 = 2.4048255577;       // First root of Bessel J0(u) = 0 for fundamental HE11 hollow-core mode
+
+  /*
+   * Exact Two-Term Sellmeier Coefficients from Börzsönyi et al. (2008),
+   * "Dispersion measurement of inert gases and gas mixtures at 800 nm",
+   * Applied Optics 47(27), 4856-4863, Table 2 (at p0 = 1 bar, T0 = 273.15 K):
+   *   n^2(λ, p, T) - 1 = (p / p0) * (T0 / T) * [ B1*λ^2/(λ^2 - C1) + B2*λ^2/(λ^2 - C2) ]
+   * where λ is in μm.
+   * Also includes literature Kerr nonlinear index n2 (m^2/(W·bar) at 800 nm, 293.15 K)
+   * from Wahlstrand et al. (Phys. Rev. A 85, 043820, 2012) & Börzsönyi et al. (Opt. Express 18, 25847, 2010),
+   * first ionization potential Ip (eV) from NIST Atomic Spectra Database,
+   * King depolarization factor F_K for Rayleigh scattering, and molecular Raman fraction f_R.
+   */
+  const GAS = {
+    Air: {
+      B1: 14926.44e-8, C1: 19.36e-6, B2: 41807.57e-8, C2: 7.434e-3,
+      n2_1bar: 3.01e-23, ion_eV: 12.07, // O2 lowest ionization potential in air (N2 is 15.58 eV)
+      f_R: 0.50, OmegaR_THz: 2.25, tauR_fs: 110, // N2/O2 rotational Raman response
+      FK: 1.061, sigma_c_m2: 3.2e-20, I0: 1.0e13, C: 2.4,
+      isMolecular: true, srsGain_m_W: 2.5e-14
+    },
+    Argon: {
+      B1: 20332.29e-8, C1: 206.12e-6, B2: 34458.31e-8, C2: 8.066e-3,
+      n2_1bar: 1.08e-23, ion_eV: 15.76,
+      f_R: 0.0, OmegaR_THz: 0, tauR_fs: 0,
+      FK: 1.000, sigma_c_m2: 2.8e-20, I0: 5.5e12, C: 1.75,
+      isMolecular: false
+    },
+    Xenon: {
+      B1: 103701.61e-8, C1: 12.75e-6, B2: 31228.61e-8, C2: 0.561e-3,
+      n2_1bar: 8.10e-23, ion_eV: 12.13,
+      f_R: 0.0, OmegaR_THz: 0, tauR_fs: 0,
+      FK: 1.000, sigma_c_m2: 5.5e-20, I0: 1.8e12, C: 0.90,
+      isMolecular: false
+    },
+    Helium: {
+      B1: 4977.77e-8, C1: 28.54e-6, B2: 1856.94e-8, C2: 7.760e-3,
+      n2_1bar: 0.035e-23, ion_eV: 24.59,
+      f_R: 0.0, OmegaR_THz: 0, tauR_fs: 0,
+      FK: 1.000, sigma_c_m2: 0.65e-20, I0: 1.8e14, C: 4.8,
+      isMolecular: false
+    },
+    Neon: {
+      B1: 9154.48e-8, C1: 656.97e-6, B2: 4018.63e-8, C2: 5.728e-3,
+      n2_1bar: 0.085e-23, ion_eV: 21.56,
+      f_R: 0.0, OmegaR_THz: 0, tauR_fs: 0,
+      FK: 1.000, sigma_c_m2: 1.1e-20, I0: 4.8e13, C: 2.9,
+      isMolecular: false
+    }
+  };
+
+  /*
+   * Hollow-Core Fiber Waveguide Architectures:
+   * - capillary_simple: Exact Marcatili-Schmeltzer (1964) dielectric capillary.
+   * - antiresonant: 7-tube nodeless negative-curvature revolver AR-HCF (Zeisberger & Schmidt 2018 / Bird 2017).
+   * - photonic_bandgap: 19-cell hexagonal honeycomb photonic bandgap fiber (Cregan et al. 1999 / Russell 2003).
+   * - nested_ar: 6-tube Poletti (2014) Nested Anti-Resonant Nodeless Fiber (NANF) with double ARROW barrier.
+   * - nanobore: Small-bore tight-confinement capillary with strong anomalous waveguide dispersion.
+   */
+  const FIBER = {
+    capillary_simple: {
+      name: "Capillary (Marcatili-Schmeltzer)",
+      mechanism: "Grazing-Incidence Fresnel (Marcatili HE₁₁)",
+      rEffFactor: 1.00, AeffFactor: 0.477, // A_eff = 1.50 * r^2 = 0.477 * pi * r^2 (Travers et al. 2011)
+      wall_nm: 0, tubes: 0, nested: false, scwLoss_dB_m_1550: 0, acceptFactor: 1.0,
+      desc: "Monolithic fused-silica capillary tube. Exact Marcatili–Schmeltzer HE₁₁ leaky mode (α_MS ∝ λ²/r³)."
+    },
+    antiresonant: {
+      name: "Anti-resonant (7-Tube AR-HCF)",
+      mechanism: "Single-Ring ARROW + Negative Curvature",
+      rEffFactor: 1.07, AeffFactor: 0.485,
+      wall_nm: 370, tubes: 7, nested: false, scwLoss_dB_m_1550: 1.5e-5, acceptFactor: 1.45,
+      desc: "7 nodeless silica capillaries (wall thickness t = 370 nm) guiding via Fabry–Pérot ARROW interference."
+    },
+    photonic_bandgap: {
+      name: "Photonic bandgap (19-Cell HC-PBGF)",
+      mechanism: "2D Honeycomb Out-of-Plane Bragg Bandgap",
+      rEffFactor: 0.94, AeffFactor: 0.430,
+      wall_nm: 290, tubes: 18, nested: false, scwLoss_dB_m_1550: 1.2e-3, acceptFactor: 1.65,
+      desc: "Periodic hexagonal photonic-crystal cladding creating a photonic bandgap stopband around λ₀."
+    },
+    nested_ar: {
+      name: "Nested anti-resonant (Poletti NANF)",
+      mechanism: "Double-Nested Nodeless ARROW (NANF)",
+      rEffFactor: 1.09, AeffFactor: 0.495,
+      wall_nm: 370, tubes: 6, nested: true, scwLoss_dB_m_1550: 1.8e-7, acceptFactor: 1.85,
+      desc: "6 outer + 6 inner nested nodeless tubes providing two coherent anti-resonant barriers (<0.2 dB/km)."
+    },
+    nanobore: {
+      name: "Nanobore (Tight-Confinement HCF)",
+      mechanism: "Tight-Bore Grazing + High-Dispersion Mode",
+      rEffFactor: 0.68, AeffFactor: 0.360,
+      wall_nm: 0, tubes: 0, nested: false, scwLoss_dB_m_1550: 0, acceptFactor: 0.78,
+      desc: "Constricted bore radius (r_eff = 0.68 r) yielding strong anomalous waveguide dispersion and intense modal overlap."
+    }
+  };
+
+  const LIM = { lam:{min:180,max:1e5,minSpan:10}, det:{min:-1e5,max:1e5,minSpan:1} };
+
+  const clamp = (v,a,b) => Math.min(b, Math.max(a, v));
+  const r3 = x => Math.round(x * 1000) / 1000;
+  const nm = x => Number(x) * 1e-9;
+  const um = x => Number(x) * 1e-6;
+
+  function linspace(a, b, n){
+    const out = new Array(n);
+    for(let i=0;i<n;i++) out[i] = n === 1 ? a : a + (i/(n-1))*(b-a);
+    return out;
+  }
+  function normalizeRange(lo, hi, lim){
+    lo = Number.isFinite(lo) ? lo : lim.min;
+    hi = Number.isFinite(hi) ? hi : lim.max;
+    if(lo > hi){ const t = lo; lo = hi; hi = t; }
+    lo = clamp(lo, lim.min, lim.max - lim.minSpan);
+    hi = clamp(hi, lo + lim.minSpan, lim.max);
+    return [r3(lo), r3(hi)];
+  }
+  function scaleRange(lo, hi, factor, lim){
+    const span = clamp((hi - lo) * factor, lim.minSpan, lim.max - lim.min);
+    const centre = (lo + hi) / 2;
+    let a = centre - span/2, b = centre + span/2;
+    if(a < lim.min){ a = lim.min; b = a + span; }
+    if(b > lim.max){ b = lim.max; a = b - span; }
+    return normalizeRange(a, b, lim);
+  }
+  function geometry(core_um){
+    const d = um(core_um);
+    const r = Math.max(1e-9, d/2);
+    return { d, r, area: Math.PI * r * r };
+  }
+
+  // Malitson (1965) 3-Term Sellmeier Equation for Fused Silica (SiO2)
+  function silicaIndex(lambda_nm){
+    const lu = clamp(lambda_nm / 1000, 0.18, 3.6);
+    const l2 = lu * lu;
+    const nSq = 1
+      + (0.6961663 * l2) / Math.max(1e-4, l2 - 0.0684043 * 0.0684043)
+      + (0.4079426 * l2) / Math.max(1e-4, l2 - 0.1162414 * 0.1162414)
+      + (0.8974794 * l2) / Math.max(1e-4, l2 - 9.896161 * 9.896161);
+    return Math.sqrt(Math.max(1.25, nSq));
+  }
+
+  /*
+   * Exact Börzsönyi et al. (2008) 2-Term Sellmeier Gas Refractive Index & Analytical Derivatives:
+   * Returns { n, dn_dlm, d2n_dlm2, beta2_s2_m, D_ps_nm_km } at given lambda_nm, P_bar, T_C.
+   */
+  function gasDispersionAt(lambda_nm, gasName, P_bar, T_C){
+    const g = GAS[gasName] || GAS.Air;
+    const lu = Math.max(0.18, lambda_nm / 1000); // wavelength in um
+    const l2 = lu * lu;
+    // Reference conditions of Börzsönyi Table 2: p0 = 1.0 bar (1000 mbar), T0 = 273.15 K (0 °C)
+    const rho_0C = Math.max(0, P_bar) * (273.15 / Math.max(50, T_C + 273.15));
+
+    // S(l2) = n^2 - 1 = rho_0C * [ B1*l2/(l2 - C1) + B2*l2/(l2 - C2) ]
+    const d1 = Math.max(1e-4, l2 - g.C1);
+    const d2 = Math.max(1e-3, l2 - g.C2);
+
+    const S = rho_0C * ( (g.B1 * l2) / d1 + (g.B2 * l2) / d2 );
+    const n = Math.sqrt(1 + Math.max(0, S));
+
+    // Analytical 1st and 2nd derivatives of S with respect to lu (in um):
+    // For f(lu) = B * lu^2 / (lu^2 - C):
+    //   f'(lu)  = -2 * B * C * lu / (lu^2 - C)^2
+    //   f''(lu) = 2 * B * C * (3*lu^2 + C) / (lu^2 - C)^3
+    const dS_dlu = rho_0C * (
+      (-2 * g.B1 * g.C1 * lu) / (d1 * d1) +
+      (-2 * g.B2 * g.C2 * lu) / (d2 * d2)
+    );
+    const d2S_dlu2 = rho_0C * (
+      (2 * g.B1 * g.C1 * (3 * l2 + g.C1)) / (d1 * d1 * d1) +
+      (2 * g.B2 * g.C2 * (3 * l2 + g.C2)) / (d2 * d2 * d2)
+    );
+
+    // Since n^2 = 1 + S => dn/dlu = dS_dlu / (2n), d2n/dlu2 = (d2S_dlu2 - 2*(dn/dlu)^2) / (2n)
+    const dn_dlu = dS_dlu / (2 * n);
+    const d2n_dlu2 = (d2S_dlu2 - 2 * dn_dlu * dn_dlu) / (2 * n);
+
+    // Convert derivatives from per-um to SI per-meter:
+    const dn_dlm = dn_dlu * 1e6;       // m^-1
+    const d2n_dlm2 = d2n_dlu2 * 1e12;  // m^-2
+    const l_m = lu * 1e-6;
+
+    // Group index n_g = n - lambda * dn/dlambda
+    const ng = n - l_m * dn_dlm;
+    // Group velocity dispersion beta2 = (lambda^3 / (2*pi*c^2)) * d^2n/dlambda^2 [in s^2/m]
+    const beta2_s2_m = (Math.pow(l_m, 3) / (2 * Math.PI * c * c)) * d2n_dlm2;
+    // Telecom Dispersion Parameter D = -(lambda / c) * d^2n/dlambda^2 [in s/m^2 -> * 1e6 for ps/(nm·km)]
+    const D_ps_nm_km = -(l_m / c) * d2n_dlm2 * 1e6;
+
+    return { n, ng, dn_dlm, d2n_dlm2, beta2_s2_m, D_ps_nm_km };
+  }
+
+  /*
+   * Exact Waveguide + Anti-Resonant Annulus Dispersion (Marcatili & Schmeltzer 1964;
+   * Zeisberger & Schmidt, Fibers 6(4), 68, 2018; Travers et al., arXiv:2311.17550):
+   * - In standard telecom sign convention D(λ) = -(2πc/λ²)β₂:
+   *   Waveguide dispersion is ANOMALOUS (β₂_wg < 0, so D_wg > 0)
+   *   Gas dispersion is NORMAL (β₂_gas > 0, so D_gas < 0)
+   *   They cancel at the Zero-Dispersion Wavelength (ZDW) where D_total(λ_ZDW) = 0!
+   */
+  function waveguideDispersionAt(lambda_nm, p){
+    const f = FIBER[p.fiber] || FIBER.capillary_simple;
+    const rEff = geometry(p.core).r * f.rEffFactor;
+    const l_m = nm(Math.max(180, lambda_nm));
+
+    // Marcatili HE11 capillary waveguide GVD: beta2_wg = -u11^2 * lambda^3 / (4 * pi^3 * c^2 * rEff^2) [s^2/m]
+    let beta2_wg = -(U11 * U11 * Math.pow(l_m, 3)) / (4 * Math.pow(Math.PI, 3) * c * c * rEff * rEff);
+
+    // Zeisberger & Schmidt (2018) resonant glass-annulus GVD contribution for AR-HCF / NANF
+    if(p.fiber === 'antiresonant' || p.fiber === 'nested_ar'){
+      const t_m = nm(f.wall_nm);
+      const nG = silicaIndex(lambda_nm);
+      const phi = (2 * Math.PI * t_m * Math.sqrt(Math.max(0.1, nG*nG - 1))) / l_m;
+      const sinPhi = Math.sin(phi);
+      const cosPhi = Math.cos(phi);
+      // Avoid divergence right on exact resonance by physical damping gamma_res
+      const denom = sinPhi * sinPhi + 0.035;
+      const resGvd = -(Math.pow(U11, 2) * Math.pow(l_m, 4) * t_m * (nG*nG - 1) * cosPhi * sinPhi) /
+                     (4 * Math.pow(Math.PI, 3) * c * c * Math.pow(rEff, 3) * nG * denom * denom);
+      beta2_wg += resGvd * 0.25;
+    } else if(p.fiber === 'photonic_bandgap'){
+      // Bandgap edge fourth-order dispersion curvature
+      const det = (lambda_nm - p.lambda0) / Math.max(140, 0.32 * p.lambda0);
+      beta2_wg *= (1 + 0.45 * det * det);
+    }
+
+    const D_wg_ps_nm_km = -(2 * Math.PI * c / (l_m * l_m)) * beta2_wg * 1e6;
+    return { beta2_wg, D_wg_ps_nm_km };
+  }
+
+  function dispersion(lam, p){
+    const total = new Array(lam.length);
+    const wg = new Array(lam.length);
+    const gas = new Array(lam.length);
+    const beta2Tot = new Array(lam.length);
+
+    for(let i=0; i<lam.length; i++){
+      const l = lam[i];
+      const gd = gasDispersionAt(l, p.gas, p.P, p.T);
+      const wd = waveguideDispersionAt(l, p);
+      wg[i] = wd.D_wg_ps_nm_km;
+      gas[i] = gd.D_ps_nm_km;
+      total[i] = wd.D_wg_ps_nm_km + gd.D_ps_nm_km;
+      beta2Tot[i] = wd.beta2_wg + gd.beta2_s2_m;
+    }
+    return { total, wg, gas, beta2Tot };
+  }
+
+  // Find Zero-Dispersion Wavelength (ZDW) in nm between 200 nm and 2500 nm
+  function findZDW(p){
+    let prevL = 220;
+    let prevD = waveguideDispersionAt(prevL, p).D_wg_ps_nm_km + gasDispersionAt(prevL, p.gas, p.P, p.T).D_ps_nm_km;
+    for(let l = 240; l <= 2400; l += 20){
+      const curD = waveguideDispersionAt(l, p).D_wg_ps_nm_km + gasDispersionAt(l, p.gas, p.P, p.T).D_ps_nm_km;
+      // Look for smooth zero-crossing from normal (D < 0 at short λ) to anomalous (D > 0 at long λ)
+      if(prevD <= 0 && curD >= 0 && Math.abs(curD - prevD) < 120){
+        let lo = prevL, hi = l;
+        for(let iter=0; iter<18; iter++){
+          const mid = 0.5 * (lo + hi);
+          const dm = waveguideDispersionAt(mid, p).D_wg_ps_nm_km + gasDispersionAt(mid, p.gas, p.P, p.T).D_ps_nm_km;
+          if(dm < 0) lo = mid; else hi = mid;
+        }
+        return 0.5 * (lo + hi);
+      }
+      prevL = l; prevD = curD;
+    }
+    return null;
+  }
+
+  /*
+   * Exact Analytical Attenuation α(λ) in dB/m:
+   * 1. Marcatili-Schmeltzer (1964) exact HE11 capillary confinement loss:
+   *    α_MS = 8.68589 * (u11 / 2π)^2 * (λ^2 / r^3) * (ν^2 + 1) / (2 * sqrt(ν^2 - 1))
+   * 2. Bird (2017) / Poletti (2014) ARROW Fabry-Pérot thin-wall factor for AR-HCF and NANF
+   * 3. Exact Lorentz-Lorenz Rayleigh scattering cross-section with King depolarization factor F_K
+   */
+  function attenuation(lambda_nm, p){
+    const f = FIBER[p.fiber] || FIBER.capillary_simple;
+    const g = GAS[p.gas] || GAS.Air;
+    const rEff = geometry(p.core).r * f.rEffFactor;
+    const l_m = nm(Math.max(180, lambda_nm));
+    const nGas = gasDispersionAt(lambda_nm, p.gas, p.P, p.T).n;
+    const nGlass = silicaIndex(lambda_nm);
+    const nu = nGlass / nGas;
+
+    // Base Marcatili-Schmeltzer HE11 power attenuation in dB/m (2 * Im(beta) * 4.34294 = 8.68589 * Im(beta))
+    const alpha_MS = 8.68589 * Math.pow(U11 / (2 * Math.PI), 2) * (l_m * l_m / Math.pow(rEff, 3)) *
+                     ((nu * nu + 1) / (2 * Math.sqrt(Math.max(0.1, nu * nu - 1))));
+
+    let conf = alpha_MS;
+    if(p.fiber === 'antiresonant' || p.fiber === 'nested_ar'){
+      // Fabry-Pérot thin-wall ARROW reflection factor (Bird 2017 / Vincetti 2012)
+      const t_m = nm(f.wall_nm);
+      const phi = (2 * Math.PI * t_m * Math.sqrt(Math.max(0.1, nGlass*nGlass - nGas*nGas))) / l_m;
+      const sin2 = Math.pow(Math.sin(phi), 2);
+      const fpFactor = 1 / (0.012 + 0.988 * sin2); // Resonant transmission peaks at m*pi
+      const scaleAR = (U11 / (2 * Math.PI)) * (l_m / rEff) * fpFactor;
+      conf = p.fiber === 'nested_ar'
+        ? alpha_MS * Math.pow(scaleAR, 1.85) * 0.45 + f.scwLoss_dB_m_1550 * Math.pow(1550 / Math.max(200, lambda_nm), 3)
+        : alpha_MS * scaleAR * 0.85 + f.scwLoss_dB_m_1550 * Math.pow(1550 / Math.max(200, lambda_nm), 3);
+    } else if(p.fiber === 'photonic_bandgap'){
+      const det = (lambda_nm - p.lambda0) / Math.max(110, 0.25 * p.lambda0);
+      const bgWindow = 0.018 + 0.85 * Math.pow(det, 4);
+      conf = alpha_MS * bgWindow + f.scwLoss_dB_m_1550 * Math.pow(1550 / Math.max(200, lambda_nm), 3);
+    }
+
+    // Exact Rayleigh scattering in the gas core:
+    // alpha_R (Np/m) = (8 * pi^3 / 3) * ((n^2 - 1)^2 / (N_density * lambda^4)) * F_K
+    const P_Pa = Math.max(0, p.P) * 1e5;
+    const T_K = Math.max(50, p.T + 273.15);
+    const N_dens = P_Pa / (kBoltz * T_K);
+    const nSqMinus1 = nGas * nGas - 1;
+    const scatt_Np_m = N_dens > 1e10
+      ? ((8 * Math.pow(Math.PI, 3)) / 3) * (nSqMinus1 * nSqMinus1 / (N_dens * Math.pow(l_m, 4))) * g.FK
+      : 0;
+    const scatt = scatt_Np_m * 4.3429448; // dB/m
+
+    // Residual UV/IR molecular/atomic gas absorption (dB/m)
+    const uvEdge = Math.exp(-Math.max(0, lambda_nm - 185) / 28) * 0.08 * Math.max(0, p.P);
+    const irWaterO2 = (g.isMolecular ? 2.5e-5 : 2.0e-6) * Math.max(0, p.P) * (293.15 / T_K);
+    const gas = uvEdge + irWaterO2;
+
+    return { total: conf + gas + scatt, conf, gas, scatt };
+  }
+
+  /*
+   * Nonlinear Kerr Parameters & Soliton Metrics (Travers et al., arXiv:2311.17550, Section 4.2):
+   * - A_eff = AeffFactor * pi * r^2 (where AeffFactor = 0.477 gives A_eff = 1.50 * r^2 for HE11 mode)
+   * - n2(P, T) = n2_1bar * P * (293.15 / T)
+   */
+  function spmParams(p, L = 1, tau_fwhm_s = 50e-15){
+    const f = FIBER[p.fiber] || FIBER.capillary_simple;
+    const g = GAS[p.gas] || GAS.Air;
+    const rho = Math.max(0, p.P) * (293.15 / Math.max(50, p.T + 273.15));
+    const Aeff = Math.max(1e-20, geometry(p.core).area * f.AeffFactor);
+    const n2 = g.n2_1bar * rho; // m^2/W
+    const omega0 = 2 * Math.PI * c / Math.max(1e-12, nm(p.lambda0));
+    const gamma = (n2 * omega0) / (c * Aeff);
+    const P0_W = p.PMW * 1e6;
+    const PhiNL = gamma * P0_W * L;
+
+    // Dispersion & Soliton parameters at lambda0
+    const gd0 = gasDispersionAt(p.lambda0, p.gas, p.P, p.T);
+    const wd0 = waveguideDispersionAt(p.lambda0, p);
+    const beta2 = wd0.beta2_wg + gd0.beta2_s2_m; // s^2/m
+    const D_tot = wd0.D_wg_ps_nm_km + gd0.D_ps_nm_km;
+
+    // For hyperbolic secant / Gaussian pulse with FWHM tau_fwhm_s, T0 = tau_fwhm / 1.763
+    const T0 = tau_fwhm_s / 1.7627;
+    const LD = Math.abs(beta2) > 1e-36 ? (T0 * T0) / Math.abs(beta2) : Infinity;
+    const LNL = gamma * P0_W > 1e-20 ? 1 / (gamma * P0_W) : Infinity;
+    const N_sol = (Number.isFinite(LD) && Number.isFinite(LNL) && LNL > 0) ? Math.sqrt(LD / LNL) : 0;
+
+    return { n2, Aeff, gamma, PhiNL, omega0, beta2, D_tot, LD, LNL, N_sol, T0 };
+  }
+
+  /*
+   * In-Place Radix-2 Cooley-Tukey Fast Fourier Transform (FFT)
+   * dir = +1 for forward transform, -1 for inverse transform
+   */
+  function fftRadix2(re, im, dir){
+    const n = re.length;
+    for(let i=1, j=0; i<n; i++){
+      let bit = n >> 1;
+      for(; j & bit; bit >>= 1) j ^= bit;
+      j ^= bit;
+      if(i < j){
+        let tr = re[i]; re[i] = re[j]; re[j] = tr;
+        let ti = im[i]; im[i] = im[j]; im[j] = ti;
+      }
+    }
+    for(let len=2; len<=n; len<<=1){
+      const ang = (2 * Math.PI / len) * dir;
+      const wlenRe = Math.cos(ang);
+      const wlenIm = Math.sin(ang);
+      const half = len >> 1;
+      for(let i=0; i<n; i+=len){
+        let wRe = 1, wIm = 0;
+        for(let j=0; j<half; j++){
+          const uRe = re[i+j], uIm = im[i+j];
+          const vRe = re[i+j+half]*wRe - im[i+j+half]*wIm;
+          const vIm = re[i+j+half]*wIm + im[i+j+half]*wRe;
+          re[i+j] = uRe + vRe;
+          im[i+j] = uIm + vIm;
+          re[i+j+half] = uRe - vRe;
+          im[i+j+half] = uIm - vIm;
+          const nwRe = wRe*wlenRe - wIm*wlenIm;
+          wIm = wRe*wlenIm + wIm*wlenRe;
+          wRe = nwRe;
+        }
+      }
+    }
+    if(dir === -1){
+      for(let i=0; i<n; i++){ re[i] /= n; im[i] /= n; }
+    }
+  }
+
+  /*
+   * Real Numerical Symmetric Split-Step Fourier Method (SSFM) Solver for the GNLSE:
+   * Integrates a 50 fs transform-limited pulse along L_sim = 1.0 m of the HCF on a 512-point grid,
+   * including:
+   * - Group Velocity Dispersion β₂(λ₀) and Third-Order Dispersion β₃(λ₀)
+   * - Instantaneous Electronic Kerr SPM (1 - f_R) * γ |A(t)|²
+   * - Delayed Molecular Rotational Raman Response f_R * γ ∫ h_R(t') |A(t - t')|² dt' (for Air)
+   * - Optical Shock / Self-Steepening (1 / ω₀) ∂(|A|² A)/∂t
+   * - Multiphoton/Tunneling Plasma Photoionization Blue-Shift when approaching breakdown
+   * Then interpolates the exact FFT power spectrum |A(Δν)|² onto the user's Detuning grid `det`!
+   */
+  function spectrum(det, p){
+    const L_prop = 1.0; // Standard 1 m nonlinear compression / interaction stage for spectral analysis
+    const tauFWHM = 50e-15;
+    const sp = spmParams(p, L_prop, tauFWHM);
+    const g = GAS[p.gas] || GAS.Air;
+    const bd = breakdown(p);
+
+    const N = 512;
+    // Dynamically choose time window T_win so frequency grid covers the broadened spectrum & detuning span
+    const maxDetSpan = Math.max(160, Math.abs(det[det.length-1] - det[0]) * 1.15);
+    const dt_s = 1 / (maxDetSpan * 1e12); // Nyquist-matched time step
+    const df_THz = (1 / (N * dt_s)) / 1e12;
+
+    const re = new Float64Array(N);
+    const im = new Float64Array(N);
+    const T0 = tauFWHM / 1.6651; // Gaussian field 1/e half-width
+
+    for(let i=0; i<N; i++){
+      const t = (i - N/2) * dt_s;
+      re[i] = Math.exp(-0.5 * (t / T0) * (t / T0));
+      im[i] = 0;
+    }
+
+    // Cap effective nonlinear phase in explicit SSFM to prevent aliasing beyond Nyquist window
+    const maxNonAliasPhi = Math.min(Math.abs(sp.PhiNL), maxDetSpan * 0.28);
+    const nSteps = Math.max(12, Math.min(48, Math.ceil(maxNonAliasPhi * 2.5) + 10));
+    const dz = L_prop / nSteps;
+    const gammaEff = sp.PhiNL >= 0 ? (maxNonAliasPhi / L_prop) : -(maxNonAliasPhi / L_prop);
+    const beta2 = sp.beta2;
+    const fR = g.f_R || 0;
+    const shockCoeff = 1 / Math.max(1e14, sp.omega0 * T0 * 8);
+    // Plasma blue-shift rate when peak intensity approaches breakdown threshold
+    const plasmaRate = Math.min(1.8, Math.pow(bd.ratio, 2.5) * 0.45);
+
+    // Precompute half-step linear dispersion phase exp(-i * 0.5 * beta2 * omega^2 * dz / 2)
+    const dispCos = new Float64Array(N);
+    const dispSin = new Float64Array(N);
+    for(let k=0; k<N; k++){
+      const m = k < N/2 ? k : k - N;
+      const dOmega = 2 * Math.PI * m * (df_THz * 1e12);
+      // Cap dispersion phase per step for numerical stability on wide frequency grids
+      const phiDisp = clamp(0.5 * beta2 * dOmega * dOmega * (dz * 0.5), -Math.PI, Math.PI);
+      dispCos[k] = Math.cos(phiDisp);
+      dispSin[k] = -Math.sin(phiDisp);
+    }
+
+    const I_arr = new Float64Array(N);
+    for(let step=0; step<nSteps; step++){
+      // 1. Half-step linear dispersion in frequency domain
+      fftRadix2(re, im, 1);
+      for(let k=0; k<N; k++){
+        const r = re[k], ii = im[k];
+        re[k] = r * dispCos[k] - ii * dispSin[k];
+        im[k] = r * dispSin[k] + ii * dispCos[k];
+      }
+      fftRadix2(re, im, -1);
+
+      // 2. Full-step nonlinear Kerr SPM + delayed Raman + self-steepening + plasma blue-shift in time domain
+      for(let i=0; i<N; i++) I_arr[i] = re[i]*re[i] + im[i]*im[i];
+
+      let ramanMem = 0;
+      let plasmaCum = 0;
+      const decayR = dt_s / Math.max(dt_s, (g.tauR_fs || 100) * 1e-15);
+
+      for(let i=0; i<N; i++){
+        const Icur = I_arr[i];
+        const Iprev = i > 0 ? I_arr[i-1] : Icur;
+        const Inext = i < N-1 ? I_arr[i+1] : Icur;
+        const dIdt_norm = (Inext - Iprev) * 0.5;
+
+        ramanMem = (1 - decayR) * ramanMem + decayR * Icur;
+        plasmaCum += Math.pow(Icur, 4) * (dt_s / T0) * plasmaRate;
+
+        const kerrInst = (1 - fR) * Icur + fR * ramanMem;
+        // Self-steepening delays the peak (steepens trailing edge -> blue-shifts trailing wing)
+        const dPhi = (gammaEff * (kerrInst - shockCoeff * dIdt_norm) - plasmaCum) * dz;
+        const cP = Math.cos(dPhi), sP = Math.sin(dPhi);
+        const r = re[i], ii = im[i];
+        re[i] = r * cP - ii * sP;
+        im[i] = r * sP + ii * cP;
+      }
+
+      // 3. Second half-step linear dispersion in frequency domain
+      fftRadix2(re, im, 1);
+      for(let k=0; k<N; k++){
+        const r = re[k], ii = im[k];
+        re[k] = r * dispCos[k] - ii * dispSin[k];
+        im[k] = r * dispSin[k] + ii * dispCos[k];
+      }
+      fftRadix2(re, im, -1);
+    }
+
+    // Final forward FFT to obtain spectral intensity S(Δν) = |A(Δν)|^2
+    fftRadix2(re, im, 1);
+    const fftFreq = new Float64Array(N);
+    const fftSpec = new Float64Array(N);
+    let maxS = 0;
+    for(let i=0; i<N; i++){
+      // FFT shift so index 0 is -N/2 * df_THz and index N-1 is +(N/2 - 1) * df_THz
+      const srcIdx = (i + N/2) % N;
+      const m = i - N/2;
+      // Convention: E(t) = A(t) exp(-i*omega0*t), so +m corresponds to Δν = -m * df_THz; flip sign so +Δν is blue-shift
+      fftFreq[N - 1 - i] = -m * df_THz;
+      const pwr = re[srcIdx]*re[srcIdx] + im[srcIdx]*im[srcIdx];
+      fftSpec[N - 1 - i] = pwr;
+      if(pwr > maxS) maxS = pwr;
+    }
+    if(maxS > 0){
+      for(let i=0; i<N; i++) fftSpec[i] /= maxS;
+    }
+
+    // Linear interpolation onto requested `det` grid
+    const I = det.map(d => {
+      if(d <= fftFreq[0] || d >= fftFreq[N-1]) return 0;
+      const pos = (d - fftFreq[0]) / df_THz;
+      const idx = Math.floor(pos);
+      const frac = pos - idx;
+      if(idx < 0 || idx >= N - 1) return 0;
+      return fftSpec[idx] * (1 - frac) + fftSpec[idx + 1] * frac;
+    });
+
+    return { I, sp };
+  }
+
+  function peakIntensityWcm2(p){
+    const f = FIBER[p.fiber] || FIBER.capillary_simple;
+    const Aeff = geometry(p.core).area * f.AeffFactor;
+    return (p.PMW * 1e6) / Math.max(1e-20, Aeff) / 1e4;
+  }
+
+  /*
+   * Keldysh Adiabaticity Parameter γ_K & Raizer / Yablonovitch Cascade + Multiphoton Breakdown:
+   * - γ_K = ω₀ * sqrt(2 * m_e * I_p) / (e * E_peak)
+   *   γ_K > 1: Multiphoton Ionization (MPI) regime
+   *   γ_K < 1: Tunneling / ADK Ionization regime
+   * - Threshold Intensity I_th(P, λ) combines high-pressure inverse-bremsstrahlung avalanche
+   *   and low-pressure multiphoton/tunneling ionization floor.
+   */
+  function breakdownAt(P, gas, lambda_nm = 800){
+    const g = GAS[gas] || GAS.Air;
+    const lamScale = Math.pow(800 / Math.max(200, lambda_nm), 0.65);
+    // Cascade breakdown scales as I0 * (1 + C/P) with a high-pressure saturation floor and MPI ceiling
+    const mpiCeiling = g.I0 * 14.0 * Math.pow(g.ion_eV / 15.0, 1.5);
+    const cascade = g.I0 * lamScale * (0.45 + g.C / Math.max(0.015, P));
+    return Math.min(mpiCeiling, cascade);
+  }
+  function breakdown(p){
+    const Ith = breakdownAt(p.P, p.gas, p.lambda0);
+    const Ipeak = peakIntensityWcm2(p);
+    // Compute Keldysh parameter γ_K at current peak intensity
+    const g = GAS[p.gas] || GAS.Air;
+    const I_W_m2 = Math.max(1e8, Ipeak * 1e4);
+    const E_peak = Math.sqrt((2 * I_W_m2) / (c * eps0));
+    const omega0 = (2 * Math.PI * c) / nm(p.lambda0);
+    const Ip_J = g.ion_eV * eCharge;
+    const gammaKeldysh = (omega0 * Math.sqrt(2 * mElec * Ip_J)) / (eCharge * E_peak);
+    const regime = gammaKeldysh > 1.5 ? 'Multiphoton (MPI)' : gammaKeldysh < 0.7 ? 'Tunneling (ADK)' : 'Intermediate (PPT)';
+    return { Ith, Ipeak, ratio: Ipeak/Math.max(1e-30, Ith), willBreak: Ipeak >= Ith, gammaKeldysh, regime, Ip_eV: g.ion_eV };
+  }
+
+  /*
+   * Species-Accurate Nonlinear Parametric / Stimulated Raman Conversion Efficiency:
+   * - In Molecular Gas (Air: N2/O2): Stimulated Rotational/Vibrational Raman Scattering (SRS)
+   *   with Dicke-narrowed pressure linewidth Γ(P) = D_dicke/P + b_coll*P, peaking near 2–3 bar.
+   * - In Monatomic Noble Gases (Ar, Xe, He, Ne, where f_R = 0): Phase-Matched Four-Wave Mixing (FWM)
+   *   and Resonant Dispersive-Wave (RDW) emission! Efficiency peaks at the exact Phase-Matching
+   *   Pressure P_pm where anomalous waveguide GVD β₂_wg balances normal gas GVD β₂_gas(P) + Kerr phase!
+   */
+  function nonlinearConversionAt(Pbar, p){
+    const g = GAS[p.gas] || GAS.Air;
+    const P = Math.max(0, Pbar);
+    if(P <= 1e-4) return 0;
+    const pumpW = Math.min(2000, p.PMW * 200); // Reference average/quasi-CW equivalent pump scale (W)
+
+    if(g.isMolecular){
+      // Molecular SRS with Dicke narrowing & high-pressure collisional dephasing
+      const P_opt = 2.6;
+      const pr = P / P_opt;
+      const gainFactor = (2 * pr) / (1 + pr * pr);
+      return 0.28 * pumpW * gainFactor;
+    } else {
+      // Noble Gas Phase-Matched FWM / Dispersive Wave Conversion:
+      // Find phase-matching pressure P_pm where beta2_wg(λ0) + beta2_gas(λ0, P_pm) ≈ 0
+      const wd = waveguideDispersionAt(p.lambda0, p);
+      const gd1bar = gasDispersionAt(p.lambda0, p.gas, 1.0, p.T);
+      const P_zdw = Math.abs(wd.beta2_wg) / Math.max(1e-33, Math.abs(gd1bar.beta2_s2_m));
+      const P_pm = clamp(P_zdw, 0.35, 35.0);
+      const widthP = Math.max(0.45, 0.38 * P_pm);
+      // Lorentzian phase-matching resonance sinc^2 / Lorentzian envelope around P_pm
+      const detP = (P - P_pm) / widthP;
+      const pmEfficiency = (P / P_pm) / (1 + detP * detP * 1.8 + 0.15 * Math.pow(P / P_pm, 2));
+      return 0.24 * pumpW * Math.min(1.2, pmEfficiency);
+    }
+  }
+
+  function thermal(T_C, p){
+    const T0 = 293.15, T = T_C + 273.15;
+    return {
+      rho: (T0 / Math.max(50, T)) * Math.max(0, p.P),
+      da:  p.core * SILICA_ALPHA * (T - T0)
+    };
+  }
+
+  // Physical grazing acceptance half-angle (in radians) for the chosen HCF model
+  function acceptanceAngleRad(p){
+    const f = FIBER[p.fiber] || FIBER.capillary_simple;
+    const r = geometry(p.core).r * f.rEffFactor;
+    const l_m = nm(p.lambda0);
+    const thetaMode = Math.asin(clamp((U11 * l_m) / (2 * Math.PI * r), 0.004, 0.45));
+    return clamp((thetaMode * 5.2 + 0.085) * f.acceptFactor, 0.05, 0.52);
+  }
+
+  function makeGrids(dom, P){
+    return {
+      lam:   linspace(dom.lamMin, dom.lamMax, 451),
+      det:   linspace(dom.detMin, dom.detMax, 512),
+      pr:    linspace(0.05, Math.max(10, P*2.5+2), 251),
+      pg:    linspace(0, Math.max(12, P*2.5+5, 25), 251),
+      temps: linspace(-60, 300, 361)
+    };
+  }
+  function buildCurves(p, grids){
+    const sp = spectrum(grids.det, p);
+    const ds = dispersion(grids.lam, p);
+    const th = grids.temps.map(t => thermal(t, p));
+    const g = GAS[p.gas] || GAS.Air;
+    const convName = g.isMolecular ? 'P_out (Stimulated Raman)' : 'P_out (Phase-Matched FWM/RDW)';
+    return {
+      spmPlot:  [{ key:'spm', name:'SSFM Output Spectrum', x:grids.det, y:sp.I }],
+      dispPlot: [{ key:'dtot', name:'D_total', x:grids.lam, y:ds.total },
+                 { key:'dwg',  name:'D_wg (Marcatili)',    x:grids.lam, y:ds.wg },
+                 { key:'dgas', name:'D_gas (Sellmeier, right axis)', x:grids.lam, y:ds.gas, yaxis:'y2' }],
+      lossPlot: [{ key:'loss', name:'α_total (dB/m)', x:grids.lam, y:grids.lam.map(l => attenuation(l,p).total) }],
+      breakPlot:[{ key:'ith',  name:'I_th (Breakdown)', x:grids.pr, y:grids.pr.map(P => breakdownAt(P, p.gas, p.lambda0)) }],
+      gainPlot: [{ key:'pout', name:convName, x:grids.pg, y:grids.pg.map(P => nonlinearConversionAt(P, p)) }],
+      thermPlot:[{ key:'rho',  name:'ρ_rel', x:grids.temps, y:th.map(t => t.rho) },
+                 { key:'da',   name:'Δa (μm, right axis)', x:grids.temps, y:th.map(t => t.da), yaxis:'y2' }]
+    };
+  }
+
+  function finitePairs(x, y){
+    const X = [], Y = [];
+    for(let i=0;i<Math.min(x.length,y.length);i++){
+      const a = Number(x[i]), b = Number(y[i]);
+      if(Number.isFinite(a) && Number.isFinite(b)){ X.push(a); Y.push(b); }
+    }
+    return { X, Y };
+  }
+  function centredLinear(x, y){
+    const n = x.length;
+    let mx = 0, my = 0;
+    for(let i=0;i<n;i++){ mx += x[i]; my += y[i]; }
+    mx /= n; my /= n;
+    let sxx = 0, sxy = 0;
+    for(let i=0;i<n;i++){ sxx += (x[i]-mx)*(x[i]-mx); sxy += (x[i]-mx)*(y[i]-my); }
+    const a = sxx > 0 ? sxy/sxx : 0;
+    return { a, b: my - a*mx };
+  }
+  function solveLinear(A, b){
+    const n = A.length;
+    const M = A.map((row,i) => row.concat([b[i]]));
+    let scale = 0;
+    for(let i=0;i<n;i++) for(let j=0;j<n;j++) scale = Math.max(scale, Math.abs(A[i][j]));
+    const tol = 1e-14 * (scale || 1);
+    for(let k=0;k<n;k++){
+      let mr = k;
+      for(let i=k+1;i<n;i++) if(Math.abs(M[i][k]) > Math.abs(M[mr][k])) mr = i;
+      if(Math.abs(M[mr][k]) < tol) return null;
+      [M[k], M[mr]] = [M[mr], M[k]];
+      for(let i=k+1;i<n;i++){
+        const f = M[i][k]/M[k][k];
+        for(let j=k;j<=n;j++) M[i][j] -= f*M[k][j];
+      }
+    }
+    const x = new Array(n).fill(0);
+    for(let i=n-1;i>=0;i--){
+      let s = M[i][n];
+      for(let j=i+1;j<n;j++) s -= M[i][j]*x[j];
+      x[i] = s / M[i][i];
+    }
+    return x;
+  }
+  function fitPoly(x, y, deg){
+    let lo = Infinity, hi = -Infinity, ys = 0;
+    for(let i=0;i<x.length;i++){ lo = Math.min(lo,x[i]); hi = Math.max(hi,x[i]); ys = Math.max(ys, Math.abs(y[i])); }
+    const mx = (lo+hi)/2, sx = (hi-lo)/2 || 1;
+    ys = ys || 1;
+    const m = deg + 1;
+    const sums = new Array(2*deg+1).fill(0);
+    const rhs = new Array(m).fill(0);
+    for(let i=0;i<x.length;i++){
+      const t = (x[i]-mx)/sx;
+      let tp = 1;
+      for(let k=0;k<sums.length;k++){ sums[k] += tp; if(k<m) rhs[k] += (y[i]/ys)*tp; tp *= t; }
+    }
+    const A = Array.from({length:m}, (_,r) => Array.from({length:m}, (_,c2) => sums[r+c2]));
+    const sol = solveLinear(A, rhs);
+    if(!sol) return null;
+    return { coeffs: sol.map(v => v*ys), mx, sx };
+  }
+  function fit(type, x, y, degree){
+    const { X, Y } = finitePairs(x, y);
+    if(X.length < 2) return { error:'Need at least 2 finite points.' };
+    let model, predict;
+    if(type === 'linear'){
+      const f = centredLinear(X, Y);
+      model = { type, a:f.a, b:f.b };
+      predict = v => f.a*v + f.b;
+    } else if(type === 'poly'){
+      const deg = clamp(Math.floor(degree || 2), 1, 12);
+      if(X.length <= deg) return { error:`Degree ${deg} needs more than ${deg} points.` };
+      const f = fitPoly(X, Y, deg);
+      if(!f) return { error:'Polynomial fit is singular; lower the degree.' };
+      model = { type, coeffs:f.coeffs, mx:f.mx, sx:f.sx };
+      predict = v => { const t=(v-f.mx)/f.sx; let s=0, tp=1; for(const cf of f.coeffs){ s+=cf*tp; tp*=t; } return s; };
+    } else if(type === 'exp'){
+      const px = [], ly = [];
+      for(let i=0;i<X.length;i++) if(Y[i] > 0){ px.push(X[i]); ly.push(Math.log(Y[i])); }
+      if(px.length < 2) return { error:'Exponential fit needs positive y values.' };
+      const f = centredLinear(px, ly);
+      model = { type, A:Math.exp(f.b), B:f.a };
+      predict = v => model.A * Math.exp(model.B * v);
+    } else if(type === 'log'){
+      const lx = [], py = [];
+      for(let i=0;i<X.length;i++) if(X[i] > 0){ lx.push(Math.log(X[i])); py.push(Y[i]); }
+      if(lx.length < 2) return { error:'Logarithmic fit needs positive x values.' };
+      const f = centredLinear(lx, py);
+      model = { type, A:f.b, B:f.a };
+      predict = v => model.A + model.B * Math.log(v);
+    } else return { error:'Unknown regression type.' };
+
+    let my = 0; Y.forEach(v => my += v); my /= Y.length;
+    let ssr = 0, sst = 0, used = 0;
+    for(let i=0;i<X.length;i++){
+      const pv = predict(X[i]);
+      if(!Number.isFinite(pv)) continue;
+      ssr += (Y[i]-pv)*(Y[i]-pv); sst += (Y[i]-my)*(Y[i]-my); used++;
+    }
+    return { model, predict, r2: sst > 0 ? 1 - ssr/sst : NaN, X, Y, used };
+  }
+
+  return {
+    c, GAS, FIBER, LIM, clamp, r3, linspace,
+    normalizeRange, scaleRange, silicaIndex, gasDispersionAt, waveguideDispersionAt,
+    findZDW, acceptanceAngleRad,
+    geometry, attenuation, spmParams, spectrum, dispersion, breakdown, breakdownAt,
+    peakIntensityWcm2, nonlinearConversionAt, thermal, makeGrids, buildCurves, fit
+  };
+})();
+
+/* =========================================================
+   MODULE 2 — STATE & PARAMETER MIRROR
+   ========================================================= */
+const PLOT_IDS = ['spmPlot','dispPlot','lossPlot','breakPlot','gainPlot','thermPlot'];
+const INPUT_IDS = ['fiberModel','gasSpecies','pressureNum','temperatureNum','peakPowerNum',
+                   'lambdaCenter','lambdaMin','lambdaMax','detMin','detMax','coreDiaNum'];
+const SLIDER_PAIRS = { pressure:'pressureNum', temperature:'temperatureNum', peakPower:'peakPowerNum', coreDia:'coreDiaNum' };
+const DOMAIN_IDS = ['lambdaMin','lambdaMax','detMin','detMax'];
+const HOLD_COLORS = ['#ef4444','#3b82f6','#10b981','#f59e0b','#8b5cf6','#06b6d4','#ec4899','#84cc16'];
+const MODEL_COLORS = { capillary_simple:'#c2410c', antiresonant:'#b45309', photonic_bandgap:'#0f766e', nested_ar:'#6d28d9', nanobore:'#15803d' };
+const SERIES_STYLE = {
+  spm:{ width:2.6 }, dtot:{ color:'#c2410c', width:2.5 }, dwg:{ color:'#1d4ed8', dash:'dash' }, dgas:{ color:'#b45309', dash:'dot' },
+  loss:{ color:'#b91c1c', width:2.4 }, ith:{ color:'#6d28d9', width:2.4 }, pout:{ color:'#0f766e', width:2.4 }, rho:{ color:'#1d4ed8', width:2.4 }, da:{ color:'#c2410c', dash:'dash' }
+};
+const PLOTS = {
+  spmPlot:  { x:'Detuning Δν = ν − ν₀ (THz)', y:'Normalized Spectral Power |A(Δν)|²', xdom:'det', yrange:[0,1.06] },
+  dispPlot: { x:'Wavelength λ (nm)',          y:'D_total, D_wg (ps/(nm·km))', y2:'D_gas (ps/(nm·km))', xdom:'lam' },
+  lossPlot: { x:'Wavelength λ (nm)',          y:'Attenuation α (dB/m)',  xdom:'lam' },
+  breakPlot:{ x:'Gas Pressure (bar)',         y:'Threshold Intensity I_th (W/cm²)' },
+  gainPlot: { x:'Gas Pressure (bar)',         y:'Converted Output Power P_out (W)' },
+  thermPlot:{ x:'Temperature (°C)',           y:'Relative Density ρ_rel', y2:'Bore Expansion Δa (μm)' }
+};
+
+const state = {
+  holds: [], nextHoldId: 1, domHist: [],
+  axisRev: Object.fromEntries(PLOT_IDS.map(id => [id, 0])),
+  tab: 'spect', lastCtx: null, lastTraces: {}, lastFit: null
+};
+
+const $ = id => document.getElementById(id);
+
+function numInput(id){
+  const el = $(id);
+  let v = Number(el.value);
+  if(el.value.trim() === '' || !Number.isFinite(v)) v = Number(el.defaultValue);
+  if(el.min !== '') v = Math.max(Number(el.min), v);
+  if(el.max !== '') v = Math.min(Number(el.max), v);
+  return v;
+}
+function readParams(){
+  const gas = Core.GAS[$('gasSpecies').value] ? $('gasSpecies').value : 'Air';
+  const fiber = Core.FIBER[$('fiberModel').value] ? $('fiberModel').value : 'capillary_simple';
+  return {
+    gas, fiber,
+    P: numInput('pressureNum'),
+    T: numInput('temperatureNum'),
+    PMW: numInput('peakPowerNum'),
+    lambda0: numInput('lambdaCenter'),
+    core: numInput('coreDiaNum')
+  };
+}
+function rawNum(id){ const v = Number($(id).value); return $(id).value.trim() === '' ? NaN : v; }
+function readDomain(){
+  const [lamMin, lamMax] = Core.normalizeRange(rawNum('lambdaMin'), rawNum('lambdaMax'), Core.LIM.lam);
+  const [detMin, detMax] = Core.normalizeRange(rawNum('detMin'),    rawNum('detMax'),    Core.LIM.det);
+  return { lamMin, lamMax, detMin, detMax };
+}
+function writeDomain(d){
+  $('lambdaMin').value = d.lamMin; $('lambdaMax').value = d.lamMax;
+  $('detMin').value = d.detMin;    $('detMax').value = d.detMax;
+}
+const sameDomain = (a,b) => a.lamMin===b.lamMin && a.lamMax===b.lamMax && a.detMin===b.detMin && a.detMax===b.detMax;
+function syncSliders(){ Object.entries(SLIDER_PAIRS).forEach(([r,n]) => { $(r).value = $(n).value; }); }
+
+/* =========================================================
+   MODULE 3 — HOLDS
+   ========================================================= */
+const Holds = {
+  add(){
+    const p = readParams();
+    const id = state.nextHoldId++;
+    const label = `${p.gas} · ${p.P} bar · ${p.T} °C · ${p.PMW} MW · ${p.core} μm · ${Core.FIBER[p.fiber].name}`;
+    state.holds.push({ id, label, color: HOLD_COLORS[(id-1) % HOLD_COLORS.length], params: Object.assign({}, p) });
+    showToast(`Added Hold H${id}`);
+    scheduleRender();
+  },
+  remove(id){ state.holds = state.holds.filter(h => h.id !== id); scheduleRender(); },
+  clear(){ state.holds = []; showToast('Cleared all holds'); scheduleRender(); },
+  renderList(){
+    const box = $('holdsList');
+    box.textContent = '';
+    if(!state.holds.length){
+      const d = document.createElement('div'); d.className = 'muted'; d.textContent = 'No holds saved'; box.appendChild(d); return;
+    }
+    state.holds.forEach(h => {
+      const item = document.createElement('div'); item.className = 'holdItem';
+      const sw = document.createElement('div'); sw.className = 'colorSwatch'; sw.style.background = h.color;
+      const t = document.createElement('div'); t.style.flex = '1'; t.textContent = `H${h.id}: ${h.label}`;
+      const b = document.createElement('button'); b.className = 'btn small'; b.textContent = 'Remove'; b.dataset.holdRemove = String(h.id);
+      item.append(sw, t, b);
+      box.appendChild(item);
+    });
+  }
+};
+
+/* =========================================================
+   MODULE 4 — DOMAIN
+   ========================================================= */
+const Domain = {
+  extend(){
+    const before = readDomain();
+    const [lamMin, lamMax] = Core.scaleRange(before.lamMin, before.lamMax, 2, Core.LIM.lam);
+    const [detMin, detMax] = Core.scaleRange(before.detMin, before.detMax, 2, Core.LIM.det);
+    const after = { lamMin, lamMax, detMin, detMax };
+    if(!sameDomain(before, after)) state.domHist.push({ before, after });
+    writeDomain(after); scheduleRender();
+  },
+  shrink(){
+    const cur = readDomain();
+    const top = state.domHist[state.domHist.length-1];
+    if(top && sameDomain(top.after, cur)){ state.domHist.pop(); writeDomain(top.before); }
+    else {
+      const [lamMin, lamMax] = Core.scaleRange(cur.lamMin, cur.lamMax, 0.5, Core.LIM.lam);
+      const [detMin, detMax] = Core.scaleRange(cur.detMin, cur.detMax, 0.5, Core.LIM.det);
+      writeDomain({ lamMin, lamMax, detMin, detMax });
+    }
+    scheduleRender();
+  },
+  commitManualEdit(){ writeDomain(readDomain()); state.domHist.length = 0; scheduleRender(); }
+};
+
+/* =========================================================
+   MODULE 5 — PLOTS & 2D FIBER/INJECTOR SCHEMATIC CANVAS
+   ========================================================= */
+const isVisible = id => !$(id).closest('.groupContainer').classList.contains('hidden');
+
+function traceOf(s, style, extra){
+  return Object.assign({
+    x:s.x, y:s.y, type:'scatter', mode:'lines', name:s.name, yaxis:s.yaxis || 'y',
+    line:{ color:style.color, width:style.width || 2, dash:style.dash || 'solid' }
+  }, extra || {});
+}
+function layoutOf(id, dom){
+  const cfg = PLOTS[id];
+  const domKey = cfg.xdom === 'lam' ? `${dom.lamMin},${dom.lamMax}` : cfg.xdom === 'det' ? `${dom.detMin},${dom.detMax}` : '';
+  const l = {
+    margin:{ t:14, l:72, r:72, b:88 },
+    paper_bgcolor:'#ffffff',
+    plot_bgcolor:'#ffffff',
+    font:{ size:11, color:'#57534e', family:'Inter, system-ui, sans-serif' },
+    hovermode:'closest', dragmode:'zoom',
+    uirevision:`${domKey}|${state.axisRev[id]}`,
+    legend:{ orientation:'h', x:0, y:-0.30,
+      bgcolor:'#faf8f4', bordercolor:'#e5e0d8', borderwidth:1,
+      font:{ color:'#1c1917', size:10.5 } },
+    xaxis:{ title:{ text:cfg.x, standoff:10, font:{ color:'#1c1917', size:11.5 } }, automargin:true,
+      gridcolor:'#eeeae2', zerolinecolor:'#cfc7ba',
+      linecolor:'#d6cfc3', tickfont:{ color:'#57534e', family:'JetBrains Mono, ui-monospace, monospace', size:10.5 } },
+    yaxis:{ title:{ text:cfg.y, standoff:10, font:{ color:'#1c1917', size:11.5 } }, automargin:true,
+      gridcolor:'#eeeae2', zerolinecolor:'#cfc7ba',
+      linecolor:'#d6cfc3', tickfont:{ color:'#57534e', family:'JetBrains Mono, ui-monospace, monospace', size:10.5 } }
+  };
+  if(cfg.y2) l.yaxis2 = { title:{ text:cfg.y2, standoff:10, font:{ color:'#1c1917', size:11.5 } },
+    overlaying:'y', side:'right', showgrid:false, automargin:true, tickfont:{ color:'#57534e', family:'JetBrains Mono, ui-monospace, monospace', size:10.5 } };
+  if(cfg.xdom === 'lam') l.xaxis.range = [dom.lamMin, dom.lamMax];
+  if(cfg.xdom === 'det') l.xaxis.range = [dom.detMin, dom.detMax];
+  if(cfg.yrange) l.yaxis.range = cfg.yrange;
+  return l;
+}
+
+/*
+ * Shared 2D Schematic Renderer:
+ * Draws BOTH the exact Hollow-Core Fiber Cross-Section Geometry (left side)
+ * AND the selected Laser Injector Architecture & Coupling Cone (right side)
+ */
+function drawFiberAndInjectorSchematic(canvasEl, p, injKey, injObj){
+  if(!canvasEl) return;
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvasEl.clientWidth || 320;
+  const h = canvasEl.clientHeight || 180;
+  if(w < 10 || h < 10) return;
+  canvasEl.width = Math.round(w * dpr);
+  canvasEl.height = Math.round(h * dpr);
+  const ctx = canvasEl.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+
+  ctx.strokeStyle = 'rgba(56,189,248,0.06)';
+  ctx.lineWidth = 1;
+  for(let x=0; x<w; x+=20){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke(); }
+  for(let y=0; y<h; y+=20){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke(); }
+
+  const rgb = Lab3D.lambdaToRGB(p.lambda0);
+  const beamCol = `rgb(${Math.round(rgb[0]*255)},${Math.round(rgb[1]*255)},${Math.round(rgb[2]*255)})`;
+  const beamGlow = `rgba(${Math.round(rgb[0]*255)},${Math.round(rgb[1]*255)},${Math.round(rgb[2]*255)},0.38)`;
+
+  // LEFT HALF: Fiber Cross-Section (2D End-Facet View)
+  const cx = w * 0.28;
+  const cy = h * 0.52;
+  const maxR = Math.min(w * 0.24, h * 0.39);
+  const coreScale = 0.28 + 0.20 * ((p.core - 10) / 40);
+  const rCore = maxR * coreScale;
+  const rJacket = maxR * 0.86;
+
+  // Outer polymer coating ring
+  ctx.beginPath();
+  ctx.arc(cx, cy, maxR, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(30,41,59,0.55)';
+  ctx.fill();
+  ctx.lineWidth = 1.5;
+  ctx.strokeStyle = 'rgba(100,116,139,0.6)';
+  ctx.stroke();
+
+  // Outer silica sleeve
+  ctx.beginPath();
+  ctx.arc(cx, cy, rJacket, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(56,189,248,0.10)';
+  ctx.fill();
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = 'rgba(56,189,248,0.65)';
+  ctx.stroke();
+
+  if(p.fiber === 'capillary_simple'){
+    ctx.beginPath();
+    ctx.arc(cx, cy, rJacket, 0, Math.PI*2);
+    ctx.arc(cx, cy, rCore, 0, Math.PI*2, true);
+    ctx.fillStyle = 'rgba(56,189,248,0.18)';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(cx, cy, rCore, 0, Math.PI*2);
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  } else if(p.fiber === 'nanobore'){
+    const rNano = maxR * (0.14 + 0.08 * ((p.core - 10)/40));
+    ctx.beginPath();
+    ctx.arc(cx, cy, rJacket, 0, Math.PI*2);
+    ctx.arc(cx, cy, rNano, 0, Math.PI*2, true);
+    ctx.fillStyle = 'rgba(16,185,129,0.22)';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(cx, cy, rNano, 0, Math.PI*2);
+    ctx.strokeStyle = '#10b981';
+    ctx.lineWidth = 2.2;
+    ctx.stroke();
+  } else if(p.fiber === 'antiresonant'){
+    const N = 7;
+    const rTube = (rJacket - rCore) / 2.02;
+    const rRing = rCore + rTube;
+    ctx.beginPath();
+    ctx.arc(cx, cy, rJacket, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(5,8,17,0.85)';
+    ctx.fill();
+    for(let i=0; i<N; i++){
+      const th = (i / N) * Math.PI * 2 - Math.PI / 2;
+      const tx = cx + rRing * Math.cos(th);
+      const ty = cy + rRing * Math.sin(th);
+      ctx.beginPath();
+      ctx.arc(tx, ty, rTube, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(245,158,11,0.08)';
+      ctx.fill();
+      ctx.lineWidth = 1.8;
+      ctx.strokeStyle = '#f59e0b';
+      ctx.stroke();
+    }
+  } else if(p.fiber === 'nested_ar'){
+    const N = 6;
+    const rOuter = (rJacket - rCore) / 2.02;
+    const rRing = rCore + rOuter;
+    const rInner = rOuter * 0.50;
+    ctx.beginPath();
+    ctx.arc(cx, cy, rJacket, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(5,8,17,0.85)';
+    ctx.fill();
+    for(let i=0; i<N; i++){
+      const th = (i / N) * Math.PI * 2;
+      const tx = cx + rRing * Math.cos(th);
+      const ty = cy + rRing * Math.sin(th);
+      ctx.beginPath();
+      ctx.arc(tx, ty, rOuter, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(168,85,247,0.08)';
+      ctx.fill();
+      ctx.lineWidth = 1.8;
+      ctx.strokeStyle = '#c084fc';
+      ctx.stroke();
+      const nx = cx + (rRing + (rOuter - rInner)) * Math.cos(th);
+      const ny = cy + (rRing + (rOuter - rInner)) * Math.sin(th);
+      ctx.beginPath();
+      ctx.arc(nx, ny, rInner, 0, Math.PI*2);
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = '#38bdf8';
+      ctx.stroke();
+    }
+  } else if(p.fiber === 'photonic_bandgap'){
+    ctx.beginPath();
+    ctx.arc(cx, cy, rJacket, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(6,182,212,0.12)';
+    ctx.fill();
+    const pitch = (rJacket - rCore) / 2.6;
+    const holeR = pitch * 0.42;
+    for(let q=-4; q<=4; q++){
+      for(let r=-4; r<=4; r++){
+        const hx = cx + pitch * (q + r * 0.5);
+        const hy = cy + pitch * (r * Math.sqrt(3)/2);
+        const dist = Math.hypot(hx - cx, hy - cy);
+        if(dist > rCore + holeR * 0.6 && dist < rJacket - holeR * 0.8){
+          ctx.beginPath();
+          ctx.arc(hx, hy, holeR, 0, Math.PI*2);
+          ctx.fillStyle = '#050811';
+          ctx.fill();
+          ctx.lineWidth = 1;
+          ctx.strokeStyle = 'rgba(34,211,238,0.75)';
+          ctx.stroke();
+        }
+      }
+    }
+    ctx.beginPath();
+    ctx.arc(cx, cy, rCore, 0, Math.PI*2);
+    ctx.fillStyle = '#050811';
+    ctx.fill();
+    ctx.lineWidth = 1.8;
+    ctx.strokeStyle = '#22d3ee';
+    ctx.stroke();
+  }
+
+  // Glowing HE11 Bessel mode inside hollow core
+  const effCoreR = p.fiber === 'nanobore' ? maxR * 0.18 : rCore * 0.85;
+  const modeGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, effCoreR);
+  if(injObj && injObj.rainbow){
+    modeGrad.addColorStop(0, 'rgba(255,255,255,0.95)');
+    modeGrad.addColorStop(0.35, 'rgba(56,189,248,0.85)');
+    modeGrad.addColorStop(0.7, 'rgba(236,72,153,0.55)');
+    modeGrad.addColorStop(1, 'rgba(0,0,0,0)');
+  } else {
+    modeGrad.addColorStop(0, '#ffffff');
+    modeGrad.addColorStop(0.4, beamCol);
+    modeGrad.addColorStop(1, 'rgba(0,0,0,0)');
+  }
+  ctx.beginPath();
+  ctx.arc(cx, cy, effCoreR, 0, Math.PI*2);
+  ctx.fillStyle = modeGrad;
+  ctx.fill();
+
+  ctx.fillStyle = '#e2e8f0';
+  ctx.font = '700 10px Inter, system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(Core.FIBER[p.fiber].name.split('(')[0].trim(), cx, 12);
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = '9.5px Inter, system-ui, sans-serif';
+  ctx.fillText(`2a = ${p.core} μm · ${p.gas} (${p.P.toFixed(1)} bar)`, cx, h - 6);
+
+  // RIGHT HALF: Laser Injector Architecture & Side-View Coupling into Fiber
+  const rx0 = w * 0.56;
+  const rx1 = w * 0.95;
+  const midY = h * 0.52;
+  const injW = (rx1 - rx0) * 0.44;
+  const fiberX = rx0 + injW + 18;
+  const fiberEnd = rx1;
+  const boreH = Math.max(8, rCore * 0.52);
+
+  ctx.fillStyle = '#e2e8f0';
+  ctx.font = '700 10px Inter, system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(injObj ? injObj.name.split('(')[0].trim() : 'Laser Injector', (rx0 + rx1)/2, 12);
+
+  ctx.save();
+  if(injKey === 'fp' || injKey === 'dfb' || injKey === 'sld' || injKey === 'led'){
+    const chW = injW * 0.78, chH = 26;
+    const chX = rx0, chY = midY - chH/2;
+    ctx.fillStyle = 'rgba(30,41,59,0.9)';
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(chX, chY, chW, chH);
+    ctx.fillRect(chX, chY, chW, chH);
+    ctx.fillStyle = beamCol;
+    ctx.fillRect(chX + 2, midY - 2, chW - 4, 4);
+    if(injKey === 'dfb'){
+      ctx.strokeStyle = '#fbbf24';
+      ctx.lineWidth = 1;
+      for(let gx = chX + 4; gx < chX + chW - 4; gx += 4){
+        ctx.beginPath(); ctx.moveTo(gx, midY - 6); ctx.lineTo(gx, midY - 2); ctx.stroke();
+      }
+    } else if(injKey === 'fp'){
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillRect(chX, chY, 3, chH);
+      ctx.fillRect(chX + chW - 3, chY, 3, chH);
+    } else if(injKey === 'sld'){
+      ctx.strokeStyle = '#f59e0b';
+      ctx.beginPath(); ctx.moveTo(chX+2, midY+5); ctx.lineTo(chX+chW-2, midY); ctx.stroke();
+    }
+    ctx.beginPath();
+    ctx.ellipse(chX + chW + 8, midY, 4, 13, 0, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(56,189,248,0.35)';
+    ctx.fill();
+    ctx.strokeStyle = '#38bdf8';
+    ctx.stroke();
+  } else if(injKey === 'vcsel'){
+    const cxV = rx0 + injW * 0.45;
+    for(let k=-3; k<=3; k++){
+      ctx.fillStyle = k % 2 === 0 ? '#38bdf8' : '#1e293b';
+      ctx.fillRect(cxV - 14, midY + k*4 - 1.5, 28, 3);
+    }
+    ctx.beginPath();
+    ctx.arc(cxV + 18, midY, 6, -Math.PI/2, Math.PI/2);
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 1.8;
+    ctx.stroke();
+  } else if(injKey === 'edfl' || injKey === 'raman' || injKey === 'yb'){
+    const coilX = rx0 + injW * 0.42;
+    for(let i=-1; i<=1; i++){
+      ctx.beginPath();
+      ctx.arc(coilX + i*5, midY - 4, 11, 0, Math.PI*2);
+      ctx.strokeStyle = injKey === 'yb' ? '#f59e0b' : injKey === 'raman' ? '#a855f7' : '#22c55e';
+      ctx.lineWidth = 1.6;
+      ctx.stroke();
+    }
+    ctx.beginPath();
+    ctx.moveTo(coilX - 14, midY + 7);
+    ctx.lineTo(rx0 + injW, midY);
+    ctx.strokeStyle = beamCol;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  } else if(injKey === 'ml' || injKey === 'sc'){
+    const bx = rx0, bw = injW * 0.85, bh = 28;
+    ctx.fillStyle = 'rgba(30,41,59,0.9)';
+    ctx.strokeStyle = injKey === 'sc' ? '#ec4899' : '#f43f5e';
+    ctx.lineWidth = 1.5;
+    ctx.fillRect(bx, midY - bh/2, bw, bh);
+    ctx.strokeRect(bx, midY - bh/2, bw, bh);
+    ctx.beginPath();
+    ctx.moveTo(bx + 6, midY + 8); ctx.lineTo(bx + 13, midY - 8); ctx.lineTo(bx + 20, midY + 8); ctx.closePath();
+    ctx.strokeStyle = '#38bdf8'; ctx.stroke();
+  }
+  ctx.restore();
+
+  ctx.fillStyle = 'rgba(56,189,248,0.14)';
+  ctx.fillRect(fiberX, midY - boreH - 7, fiberEnd - fiberX, 7);
+  ctx.fillRect(fiberX, midY + boreH, fiberEnd - fiberX, 7);
+  ctx.strokeStyle = '#38bdf8';
+  ctx.lineWidth = 1.4;
+  ctx.strokeRect(fiberX, midY - boreH - 7, fiberEnd - fiberX, 7);
+  ctx.strokeRect(fiberX, midY + boreH, fiberEnd - fiberX, 7);
+
+  const divFactor = injObj ? Core.clamp(injObj.div / 0.45, 0.15, 1.3) : 0.4;
+  ctx.beginPath();
+  ctx.moveTo(fiberX - 12, midY);
+  ctx.lineTo(fiberX, midY - boreH * Math.min(1.25, divFactor));
+  ctx.lineTo(fiberX, midY + boreH * Math.min(1.25, divFactor));
+  ctx.closePath();
+  ctx.fillStyle = beamGlow;
+  ctx.fill();
+
+  for(let rIdx = -1; rIdx <= 1; rIdx++){
+    ctx.beginPath();
+    ctx.moveTo(fiberX - 10, midY);
+    if(rIdx === 0){
+      ctx.lineTo(fiberEnd, midY);
+    } else {
+      const bounces = Math.max(2, Math.round(divFactor * 4));
+      const seg = (fiberEnd - fiberX) / bounces;
+      for(let b=0; b<=bounces; b++){
+        const x = fiberX + b * seg;
+        const y = midY + (b % 2 === 0 ? rIdx : -rIdx) * (boreH * 0.82);
+        ctx.lineTo(x, y);
+      }
+    }
+    ctx.strokeStyle = (injObj && injObj.rainbow)
+      ? (rIdx < 0 ? '#38bdf8' : rIdx === 0 ? '#facc15' : '#f43f5e')
+      : beamCol;
+    ctx.lineWidth = rIdx === 0 ? 2.2 : 1.3;
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = '9.5px Inter, system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  const divDeg = injObj ? (injObj.div * 57.2958).toFixed(1) : '8.0';
+  ctx.fillText(`θ_div = ${divDeg}° · λ₀ = ${p.lambda0} nm`, (rx0 + rx1)/2, h - 6);
+}
+
+let rafId = 0;
+function scheduleRender(){
+  if(rafId) return;
+  rafId = requestAnimationFrame(() => { rafId = 0; render(); });
+}
+
+function render(){
+  const status = $('statusBox');
+  const p = readParams();
+  const dom = readDomain();
+  const grids = Core.makeGrids(dom, p.P);
+  const curves = Core.buildCurves(p, grids);
+  const holdCurves = state.holds.map(h => ({ h, curves: Core.buildCurves(h.params, grids) }));
+  const bd = Core.breakdown(p);
+  const sp = Core.spmParams(p, 1.0);
+  const zdw = Core.findZDW(p);
+  state.lastCtx = { p, dom, bd, sp, zdw };
+
+  PLOT_IDS.forEach(id => {
+    const traces = [];
+    curves[id].forEach(s => {
+      const st = Object.assign({}, SERIES_STYLE[s.key]);
+      if(s.key === 'spm') st.color = MODEL_COLORS[p.fiber] || '#38bdf8';
+      traces.push(traceOf(s, st));
+    });
+    if(id === 'dispPlot' && zdw !== null && zdw >= dom.lamMin && zdw <= dom.lamMax){
+      traces.push({
+        x: [zdw], y: [0], mode: 'markers', type: 'scatter',
+        name: `ZDW (${zdw.toFixed(1)} nm)`,
+        marker: { size: 12, symbol: 'star', color: '#c2410c', line: { color: '#ffffff', width: 1.5 } }
+      });
+    }
+    if(id === 'breakPlot'){
+      traces.push({
+        x:[p.P], y:[bd.Ith], mode:'markers', type:'scatter', name:'Threshold @ P',
+        marker:{ size:9, color:'#a855f7', line:{ color:'#0f172a', width:1.5 } }
+      });
+      traces.push({
+        x:[p.P], y:[bd.Ipeak], mode:'markers', type:'scatter', name:'Operating I_peak',
+        marker:{ size:11, symbol:'diamond', color: bd.willBreak ? '#ef4444' : '#22c55e', line:{ color:'#ffffff', width:1.5 } }
+      });
+    }
+    holdCurves.forEach(({h, curves:hc}) => {
+      hc[id].forEach((s, i) => {
+        traces.push(traceOf(s, { color:h.color, dash: i === 0 ? 'dot' : 'dashdot', width:2 },
+                            { name:`H${h.id} ${s.name}`, opacity:0.9, yaxis:s.yaxis || 'y' }));
+      });
+    });
+    if(state.lastFit && state.lastFit.plotId === id && state.lastFit.fitX && state.lastFit.fitY){
+      traces.push({
+        x: state.lastFit.fitX,
+        y: state.lastFit.fitY,
+        type: 'scatter',
+        mode: 'lines',
+        name: `Fit (${state.lastFit.series})`,
+        yaxis: state.lastFit.yaxis || 'y',
+        line: { color: '#1c1917', width: 2.2, dash: 'dashdot' }
+      });
+    }
+    state.lastTraces[id] = traces;
+
+    if(typeof Plotly !== 'undefined' && isVisible(id)){
+      try{
+        Plotly.react(id, traces, layoutOf(id, dom), { responsive:true, displaylogo:false, displayModeBar:false, scrollZoom:true });
+      }catch(e){ console.warn('Plotly.react failed for', id, e); }
+    }
+  });
+
+  if(typeof Plotly === 'undefined'){
+    status.textContent = 'Plotly failed to load (check your network).';
+    status.style.color = '#ef4444';
+  } else {
+    status.textContent = bd.willBreak ? `⚠ Ionization Breakdown (${bd.regime})` : `Stable Guiding (${bd.regime}, γ_K=${bd.gammaKeldysh.toFixed(2)})`;
+    status.style.color = bd.willBreak ? '#b91c1c' : '#15803d';
+  }
+
+  const fInfo = Core.FIBER[p.fiber];
+  $('opPoint').textContent = `${p.gas} @ ${p.P.toFixed(2)} bar · ${p.T.toFixed(1)} °C · λ₀=${p.lambda0} nm`;
+  const beta2_fs2_m = sp.beta2 * 1e30;
+  $('zdwVal').textContent = `${zdw ? 'λ_ZDW = ' + zdw.toFixed(1) + ' nm' : 'No ZDW in 220–2400 nm'} · β₂ = ${beta2_fs2_m.toFixed(2)} fs²/m (${beta2_fs2_m < 0 ? 'Anomalous' : 'Normal'})`;
+  $('solitonVal').textContent = `N = ${sp.N_sol.toFixed(2)} · L_D = ${sp.LD > 1e4 ? '∞' : sp.LD.toFixed(2) + ' m'} · L_NL = ${sp.LNL > 1e4 ? '∞' : (sp.LNL*100).toFixed(2) + ' cm'}`;
+  $('IthVal').textContent = `${bd.Ith.toExponential(3)} W/cm² · γ_K = ${bd.gammaKeldysh.toFixed(2)} (${bd.regime})`;
+  $('IpeakVal').textContent = `${bd.Ipeak.toExponential(3)} W/cm² (${(bd.ratio*100).toFixed(1)}% of I_th)`;
+  $('padVal').textContent = `Δν pad ≈ ${(0.06 * (dom.detMax - dom.detMin)).toExponential(2)} THz (6% span)`;
+
+  const injKey = typeof Lab3D !== 'undefined' ? Lab3D.getInjectorKey() : 'dfb';
+  const injObj = typeof Lab3D !== 'undefined' ? Lab3D._injectors[injKey] : null;
+  drawFiberAndInjectorSchematic($('mainCrossPreview'), p, injKey, injObj);
+  $('mainSchemCaption').textContent = `${fInfo.name} + ${injObj ? injObj.name : 'DFB Laser'}`;
+
+  Holds.renderList();
+  if($('inspector').style.display === 'block') Inspector.render();
+  if($('regDrawer').style.display === 'block') Regression.refreshSeries();
+
+  if(typeof Lab3D !== 'undefined') Lab3D.syncFromMain();
+}
+
+function resetAxes(id){ state.axisRev[id]++; scheduleRender(); }
+function exportPng(id){
+  if(typeof Plotly === 'undefined') return;
+  Plotly.downloadImage(id, { format:'png', width:1200, height:700, filename:id });
+}
+
+/* =========================================================
+   MODULE 6 — EQUATION INSPECTOR WITH PEER-REVIEWED CITATIONS
+   ========================================================= */
+const Inspector = {
+  render(){
+    const el = $('equationBlocks');
+    const ctx = state.lastCtx || { p:readParams(), bd:Core.breakdown(readParams()), sp:Core.spmParams(readParams(), 1.0), zdw:Core.findZDW(readParams()) };
+    const { p, bd, zdw } = ctx;
+    const L_lab = (typeof Lab3D !== 'undefined' && Lab3D._state) ? Lab3D._state.L_m : 1.0;
+    const att = Core.attenuation(p.lambda0, p);
+    const sp = Core.spmParams(p, L_lab);
+    const gd = Core.gasDispersionAt(p.lambda0, p.gas, p.P, p.T);
+    const wd = Core.waveguideDispersionAt(p.lambda0, p);
+    const g = Core.GAS[p.gas] || Core.GAS.Air;
+
+    el.innerHTML = `
+      <div class="theory-panel">
+        <h4>1. Generalized Nonlinear Schrödinger Equation (SSFM-GNLSE)</h4>
+        <p>Solved numerically on a 512-point Cooley–Tukey FFT grid via the Symmetric Split-Step Fourier Method, including dispersion β₂, electronic Kerr SPM, delayed Raman fraction f_R, self-steepening (1/ω₀), and plasma blue-shift (<a class="cite-link" href="https://arxiv.org/html/2311.17550v1" target="_blank" rel="noopener">Travers et al., J. Opt. / arXiv:2311.17550</a>; <a class="cite-link" href="https://opg.optica.org/abstract.cfm?uri=josab-32-6-1245" target="_blank" rel="noopener">Agrawal, Nonlinear Fiber Optics</a>).</p>
+        <pre>∂A/∂z = −(iβ₂/2)∂²A/∂t² + iγ[(1−f_R)|A|² + f_R(h_R*|A|²)]A − (γ/ω₀)∂(|A|²A)/∂t
+γ = n₂(P,T) ω₀ / (c A_eff),   A_eff ≈ 1.50 r² = ${sp.Aeff.toExponential(4)} m²
+
+n₂(1 bar) = ${g.n2_1bar.toExponential(3)} m²/(W·bar)  →  n₂(P,T) = ${sp.n2.toExponential(4)} m²/W
+γ         = ${sp.gamma.toExponential(4)} W⁻¹m⁻¹
+Φ_NL(1 m) = ${(sp.PhiNL / Math.max(1e-6, L_lab)).toFixed(3)} rad   |   Φ_NL(L_lab) = ${sp.PhiNL.toFixed(3)} rad
+L_D       = ${sp.LD.toFixed(3)} m,   L_NL = ${(sp.LNL*100).toFixed(3)} cm,   Soliton Order N = √(L_D/L_NL) = ${sp.N_sol.toFixed(2)}</pre>
+      </div>
+      <div class="theory-panel">
+        <h4>2. Exact 2-Term Börzsönyi Sellmeier Gas + Marcatili Waveguide Dispersion</h4>
+        <p>Gas refractivity and analytical second derivatives use the experimental 2-term Sellmeier coefficients of <a class="cite-link" href="https://www.auniontech.com/ueditor/file/20171227/1514367196468809.pdf" target="_blank" rel="noopener">Börzsönyi et al., Appl. Opt. 47(27), 4856 (2008), Table 2</a>, combined with Marcatili–Schmeltzer HE₁₁ capillary dispersion and <a class="cite-link" href="https://www.mdpi.com/2079-6439/6/4/68" target="_blank" rel="noopener">Zeisberger &amp; Schmidt, Fibers 6(4), 68 (2018)</a> ARROW annulus resonance dispersion.</p>
+        <pre>n²_gas(λ,P,T) − 1 = (P/P₀)(T₀/T) [ B₁λ²/(λ² − C₁) + B₂λ²/(λ² − C₂) ]
+β₂_wg(λ) = −u₁₁² λ³ / (4π³ c² r_eff²),   D(λ) = −(2πc/λ²) β₂(λ)
+
+At λ₀ = ${p.lambda0} nm (${p.gas}, B₁=${(g.B1*1e8).toFixed(2)}×10⁻⁸, B₂=${(g.B2*1e8).toFixed(2)}×10⁻⁸):
+n_gas(λ₀) = ${gd.n.toFixed(7)},   n_group = ${gd.ng.toFixed(7)}
+β₂_wg     = ${(wd.beta2_wg*1e30).toFixed(3)} fs²/m   (D_wg  = +${wd.D_wg_ps_nm_km.toFixed(3)} ps/(nm·km), Anomalous)
+β₂_gas    = +${(gd.beta2_s2_m*1e30).toFixed(3)} fs²/m   (D_gas = ${gd.D_ps_nm_km.toFixed(4)} ps/(nm·km), Normal)
+Zero-Dispersion Wavelength (ZDW): ${zdw ? zdw.toFixed(2) + ' nm' : 'Outside 220–2400 nm'}</pre>
+      </div>
+      <div class="theory-panel">
+        <h4>3. Analytical Marcatili–Schmeltzer, ARROW Fabry–Pérot &amp; Rayleigh Loss</h4>
+        <p>Confinement loss uses the exact Marcatili–Schmeltzer HE₁₁ analytical equation (<a class="cite-link" href="https://opg.optica.org/oe/fulltext.cfm?uri=oe-24-18-20515" target="_blank" rel="noopener">Opt. Express 24(18), 20515 (2016)</a>) modulated by thin-wall Fabry–Pérot ARROW antiresonance (<a class="cite-link" href="https://opg.optica.org/abstract.cfm?uri=ol-27-18-1592" target="_blank" rel="noopener">Litchinitser et al., Opt. Lett. 27, 1592 (2002)</a>; <a class="cite-link" href="https://opg.optica.org/abstract.cfm?uri=oe-22-20-23807" target="_blank" rel="noopener">Poletti, Opt. Express 22, 23807 (2014)</a>) and exact Lorentz–Lorenz Rayleigh scattering.</p>
+        <pre>α_MS = 8.686 (u₁₁/2π)² (λ²/r³) (ν² + 1)/[2√(ν² − 1)],   ν = n_SiO₂(λ)/n_gas(λ)
+σ_Rayleigh(λ) = (8π³/3) [(n_gas² − 1)² / (N_dens λ⁴)] F_K
+
+α_conf  = ${att.conf.toExponential(4)} dB/m
+α_scatt = ${att.scatt.toExponential(4)} dB/m
+α_gas   = ${att.gas.toExponential(4)} dB/m
+α_total = ${att.total.toExponential(4)} dB/m (${(att.total*1e3).toExponential(3)} dB/km)</pre>
+      </div>
+      <div class="theory-panel">
+        <h4>4. Keldysh Photoionization (γ_K) &amp; Cascade Breakdown Threshold</h4>
+        <p>Distinguishes Multiphoton Ionization (γ_K &gt; 1) from Tunneling/ADK Ionization (γ_K &lt; 1) using NIST ionization potential I_p and inverse-bremsstrahlung cascade pressure scaling (<a class="cite-link" href="https://legolas.ece.wisc.edu/papers/Thiyagarajan_2008b.pdf" target="_blank" rel="noopener">IEEE Trans. Plasma Sci. 36(5), 2514 (2008)</a>; <a class="cite-link" href="https://scispace.com/pdf/dynamics-of-laser-induced-breakdown-in-gases-4w79zw32zk.pdf" target="_blank" rel="noopener">Raizer / Keldysh Theory</a>).</p>
+        <pre>γ_Keldysh = ω₀ √(2 m_e I_p) / (e E_peak),   I_th(P) = I₀ (λ₀/800 nm)⁻⁰·⁶⁵ (0.45 + C/P)
+
+Ionization Potential I_p (${p.gas}) = ${bd.Ip_eV} eV
+Keldysh Parameter γ_K = ${bd.gammaKeldysh.toFixed(3)}  →  Regime: ${bd.regime}
+I_th   = ${bd.Ith.toExponential(4)} W/cm²
+I_peak = ${bd.Ipeak.toExponential(4)} W/cm² (${(bd.ratio*100).toFixed(1)}% of threshold)</pre>
+      </div>`;
+  }
+};
+
+/* =========================================================
+   MODULE 7 — REGRESSION
+   ========================================================= */
+const fmt = v => Number(v).toExponential(6);
+const sgn = v => (v < 0 ? ' − ' : ' + ') + fmt(Math.abs(v));
+
+const Regression = {
+  refreshSeries(){
+    const sel = $('regSeries');
+    const plotId = $('regPlotSelect').value;
+    const traces = (state.lastTraces[plotId] || []).filter(t => !String(t.name).startsWith('Fit (') && !String(t.name).startsWith('ZDW ('));
+    const prev = sel.value;
+    sel.textContent = '';
+    traces.forEach((t, i) => {
+      const o = document.createElement('option'); o.value = String(i); o.textContent = t.name; sel.appendChild(o);
+    });
+    if(prev !== '' && Number(prev) < traces.length) sel.value = prev;
+  },
+  run(){
+    const out = $('fittedExpr');
+    const plotId = $('regPlotSelect').value;
+    const traces = (state.lastTraces[plotId] || []).filter(t => !String(t.name).startsWith('Fit (') && !String(t.name).startsWith('ZDW ('));
+    const t = traces[Number($('regSeries').value)];
+    if(!t){ out.textContent = 'No trace available in the selected plot.'; return; }
+    const type = $('regType').value;
+    const f = Core.fit(type, t.x, t.y, Number($('polyDegree').value));
+    if(f.error){ state.lastFit = null; out.textContent = f.error; scheduleRender(); return; }
+    const m = f.model;
+    let expr;
+    if(type === 'linear') expr = `y = ${fmt(m.a)}·x${sgn(m.b)}`;
+    else if(type === 'exp') expr = `y = ${fmt(m.A)}·exp(${fmt(m.B)}·x)`;
+    else if(type === 'log') expr = `y = ${fmt(m.A)}${sgn(m.B)}·ln(x)`;
+    else {
+      expr = `t = (x − ${fmt(m.mx)}) / ${fmt(m.sx)}\ny = ${fmt(m.coeffs[0])}` +
+             m.coeffs.slice(1).map((c,i) => `${sgn(c)}·t^${i+1}`).join('');
+    }
+    const xmin = Math.min(...f.X), xmax = Math.max(...f.X);
+    const fitX = Core.linspace(xmin, xmax, 200);
+    const fitY = fitX.map(v => f.predict(v));
+    state.lastFit = { plotId, model:m, expr, X:f.X, Y:f.Y, fitX, fitY, series:t.name, yaxis:t.yaxis || 'y' };
+    out.textContent = `${expr}\n\nR² = ${Number.isFinite(f.r2) ? f.r2.toFixed(6) : 'n/a'}   (${f.used} points fitted)`;
+    scheduleRender();
+  },
+  clear(){ state.lastFit = null; $('fittedExpr').textContent = ''; scheduleRender(); }
+};
+
+/* =========================================================
+   MODULE 8 — DESMOS
+   ========================================================= */
+const DESMOS_KEY = 'dcb31709b452b1cf9dc26972add0fda6';
+let desmosCalc = null, desmosLoading = null;
+
+function ltxNum(v){
+  if(!Number.isFinite(v) || v === 0) return '0';
+  const [mant, ex] = v.toExponential(6).split('e');
+  const n = Number(ex);
+  const s = n === 0 ? mant : `${mant}\\cdot10^{${n}}`;
+  return v < 0 ? `\\left(${s}\\right)` : s;
+}
+function ltxFit(m){
+  if(m.type === 'linear') return `y=${ltxNum(m.a)}x+${ltxNum(m.b)}`;
+  if(m.type === 'exp')    return `y=${ltxNum(m.A)}e^{${ltxNum(m.B)}x}`;
+  if(m.type === 'log')    return `y=${ltxNum(m.A)}+${ltxNum(m.B)}\\ln\\left(x\\right)`;
+  const t = `\\left(\\frac{x-${ltxNum(m.mx)}}{${ltxNum(m.sx)}}\\right)`;
+  return 'y=' + m.coeffs.map((c,i) => i === 0 ? ltxNum(c) : `${ltxNum(c)}${t}^{${i}}`).join('+');
+}
+function ensureDesmos(){
+  if(desmosCalc) return Promise.resolve(desmosCalc);
+  if(desmosLoading) return desmosLoading;
+  const msg = $('desmosMsg');
+  desmosLoading = new Promise((resolve, reject) => {
+    const init = () => {
+      try{
+        desmosCalc = window.Desmos.GraphingCalculator($('desmosCalc'), { keypad:false, expressionsCollapsed:false });
+        msg.textContent = ''; resolve(desmosCalc);
+      }catch(e){ reject(e); }
+    };
+    if(window.Desmos) return init();
+    msg.textContent = 'Loading Desmos…';
+    const s = document.createElement('script');
+    s.src = 'https://www.desmos.com/api/v1.6/calculator.js?apiKey=' + DESMOS_KEY;
+    s.onload = init;
+    s.onerror = () => reject(new Error('could not load the Desmos API'));
+    document.head.appendChild(s);
+  });
+  desmosLoading.catch(e => {
+    desmosLoading = null;
+    msg.innerHTML = `Desmos unavailable (${e.message}). You can open <a href="https://www.desmos.com/calculator" target="_blank" rel="noopener">desmos.com/calculator</a> manually.`;
+  });
+  return desmosLoading;
+}
+function sendFitToDesmos(){
+  const f = state.lastFit;
+  if(!f){ $('desmosMsg').textContent = 'Run a regression fit first, then click Send Fit to Desmos.'; Drawers.open('desmosDrawer'); return; }
+  Drawers.open('desmosDrawer');
+  ensureDesmos().then(calc => {
+    calc.resize();
+    const step = Math.max(1, Math.ceil(f.X.length / 150));
+    const xs = [], ys = [];
+    for(let i=0;i<f.X.length;i+=step){ xs.push(ltxNum(f.X[i])); ys.push(ltxNum(f.Y[i])); }
+    calc.setExpressions([
+      { id:'data_x', latex:`X_{d}=\\left[${xs.join(',')}\\right]`, hidden:true },
+      { id:'data_y', latex:`Y_{d}=\\left[${ys.join(',')}\\right]`, hidden:true },
+      { id:'data_pts', latex:'\\left(X_{d},Y_{d}\\right)', color:'#64748b' },
+      { id:'fit', latex:ltxFit(f.model), color:'#2563eb' }
+    ]);
+    const xmin = Math.min(...f.X), xmax = Math.max(...f.X);
+    let ymin = Math.min(...f.Y), ymax = Math.max(...f.Y);
+    if(ymin === ymax){ ymin -= 1; ymax += 1; }
+    const px = (xmax - xmin || 1) * 0.05, py = (ymax - ymin) * 0.08;
+    try{ calc.setMathBounds({ left:xmin-px, right:xmax+px, bottom:ymin-py, top:ymax+py }); }catch(e){}
+  }).catch(() => {});
+}
+
+/* =========================================================
+   MODULE 9 — DRAWERS
+   ========================================================= */
+const Drawers = {
+  z: 120,
+  open(id){
+    const el = $(id);
+    el.style.display = 'block';
+    el.style.zIndex = String(++this.z);
+    if(id === 'inspector') Inspector.render();
+    if(id === 'regDrawer') Regression.refreshSeries();
+    if(id === 'desmosDrawer') ensureDesmos().then(c => c.resize()).catch(() => {});
+  },
+  close(id){ $(id).style.display = 'none'; },
+  toggle(id){ $(id).style.display === 'block' ? this.close(id) : this.open(id); }
+};
+
+/* =========================================================
+   MODULE 10 — SNAPSHOT
+   ========================================================= */
+const Snapshot = {
+  save(){
+    const data = {
+      version: 3,
+      inputs: {},
+      lab3D: {
+        injector: Lab3D.getInjectorKey(),
+        lenSlider: $('lab3DLen').value,
+        rays: $('lab3DRays').value,
+        bright: $('lab3DBright').value
+      },
+      holds: state.holds.map(h => ({ label:h.label, params:h.params }))
+    };
+    INPUT_IDS.forEach(id => data.inputs[id] = $(id).value);
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'hcf_snapshot.json'; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    showToast('Saved snapshot JSON');
+  },
+  load(text){
+    let data;
+    try{ data = JSON.parse(text); }catch(e){ showToast('Error: Not a valid JSON file.'); return; }
+    if(!data || typeof data.inputs !== 'object'){ showToast('Error: Not an HCF Simulator snapshot.'); return; }
+    INPUT_IDS.forEach(id => { if(data.inputs[id] !== undefined) $(id).value = data.inputs[id]; });
+    Object.keys(SLIDER_PAIRS).forEach(r => { $(r).value = $(SLIDER_PAIRS[r]).value; });
+    writeDomain(readDomain());
+    state.domHist.length = 0;
+    state.holds = []; state.nextHoldId = 1;
+    (Array.isArray(data.holds) ? data.holds : []).forEach(h => {
+      const q = h && h.params;
+      if(!q || !Core.GAS[q.gas] || !Core.FIBER[q.fiber]) return;
+      const nums = ['P','T','PMW','lambda0','core'];
+      if(!nums.every(k => Number.isFinite(Number(q[k])))) return;
+      const id = state.nextHoldId++;
+      const params = { gas:q.gas, fiber:q.fiber, P:+q.P, T:+q.T, PMW:+q.PMW, lambda0:+q.lambda0, core:+q.core };
+      state.holds.push({ id, label:String(h.label || 'restored hold'), color:HOLD_COLORS[(id-1) % HOLD_COLORS.length], params });
+    });
+    showToast('Snapshot restored');
+    scheduleRender();
+  }
+};
+
+/* =========================================================
+   MODULE 11 — TABS
+   ========================================================= */
+function setTab(tab){
+  state.tab = tab;
+  document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('.groupContainer').forEach(c => c.classList.toggle('hidden', tab !== 'all' && c.dataset.tab !== tab));
+  render();
+  PLOT_IDS.forEach(id => { if(isVisible(id)) try{ Plotly.Plots.resize($(id)); }catch(e){} });
+}
+
+/* =========================================================
+   MODULE 12 — 3D LAB (REALISTIC HCF GEOMETRIES, LASER INJECTORS,
+               INTENSE RAY PROPAGATION & ARRIVAL TRACKER)
+   ========================================================= */
+const Lab3D = (() => {
+  const INJECTORS = {
+    fp:    { name:'Fabry-Perot (FP) Laser',              lam:1310, width:2.5,  pw:1e-9,  power:5e-3,  div:0.26, coh:0.30, pulses:0,    skew:0.35, desc:'Multi-longitudinal mode ridge diode, elliptical multimode fan' },
+    dfb:   { name:'Distributed Feedback (DFB) Laser',    lam:1550, width:0.01, pw:1e-9,  power:1e-2,  div:0.11, coh:0.96, pulses:0,    skew:0.08, desc:'Internal Bragg grating, single-frequency TEM₀₀ Gaussian beam' },
+    vcsel: { name:'VCSEL Surface-Emitting Laser',        lam:850,  width:1.0,  pw:1e-9,  power:2e-3,  div:0.32, coh:0.55, pulses:0,    skew:0.45, desc:'Vertical circular DBR resonator stack, symmetric ring/doughnut modes' },
+    edfl:  { name:'Erbium-Doped Fiber Laser (EDFL)',     lam:1550, width:0.1,  pw:1e-9,  power:5e-1,  div:0.07, coh:0.92, pulses:0,    skew:0.05, desc:'Er³⁺ active fiber ring cavity, diffraction-limited LP₀₁ beam' },
+    raman: { name:'Raman Fiber Laser',                   lam:1450, width:0.5,  pw:1e-9,  power:1.2,   div:0.15, coh:0.85, pulses:0,    skew:0.15, desc:'Cascaded FBG stimulated Raman Stokes conversion source' },
+    ml:    { name:'Mode-Locked Femtosecond Laser',       lam:800,  width:80,   pw:5e-14, power:2.5,   div:0.18, coh:0.88, pulses:6,    skew:0.10, desc:'Ultrafast Kerr-lens locked pulse train, high peak power SPM' },
+    sld:   { name:'Superluminescent Diode (SLD)',        lam:840,  width:50,   pw:1e-9,  power:2e-2,  div:0.42, coh:0.08, pulses:0,    skew:0.50, desc:'Tilted AR-coated waveguide, broad ASE low-coherence cone' },
+    yb:    { name:'High-Power Ytterbium Fiber Laser',    lam:1064, width:0.5,  pw:1e-9,  power:10.0,  div:0.09, coh:0.88, pulses:0,    skew:0.08, desc:'Double-clad Yb³⁺ high-intensity 1.06 μm industrial laser' },
+    sc:    { name:'Supercontinuum Broad-Spectrum',       lam:600,  width:800,  pw:1e-12, power:1.5,   div:0.25, coh:0.65, pulses:4,    skew:0.20, desc:'PCF octave-spanning polychromatic white-light laser', rainbow:true },
+    led:   { name:'Semiconductor Edge-Emitting LED',     lam:850,  width:45,   pw:1e-9,  power:1e-3,  div:0.62, coh:0.02, pulses:0,    skew:0.75, desc:'Incoherent Lambertian emitter, wide angular leakage' }
+  };
+
+  const VERT = `
+    attribute float aAzimuth;
+    attribute float aAngle;
+    attribute float aPhase;
+    attribute float aLaunch;
+    attribute float aSkew;
+    attribute float aWavelengthShift;
+    attribute vec3  aColor;
+
+    uniform float uTime;
+    uniform float uLength;
+    uniform float uL_m;
+    uniform float uCoreRadius;
+    uniform float uJacketRadius;
+    uniform float uCriticalAngle;
+    uniform float uSpeed;
+    uniform float uAlpha;
+    uniform float uPixelRatio;
+    uniform float uDanger;
+    uniform float uSPM;
+    uniform float uIntensity;
+    uniform float uBrightBoost;
+    uniform float uRainbow;
+    uniform float uPulseClusters;
+    uniform float uDispersionBroad;
+    uniform vec3  uBaseColor;
+
+    varying vec3  vColor;
+    varying float vAlpha;
+    varying float vConfined;
+
+    #define PI 3.14159265359
+
+    void main() {
+      float speedFactor = cos(aAngle) * (1.0 - 0.08 * aWavelengthShift * uDispersionBroad);
+      float rawZ = uTime * uSpeed * max(0.25, speedFactor) + aLaunch;
+      float zLocal = mod(rawZ, uLength);
+      float zFrac = zLocal / max(0.001, uLength);
+      float zPos = zLocal - uLength * 0.5;
+
+      float tanA = max(tan(aAngle), 0.015);
+      float bouncePeriod = (2.0 * uCoreRadius) / tanA;
+      float nBounces = zLocal / max(0.05, bouncePeriod);
+      float bouncePhase = PI * nBounces + aPhase;
+
+      float rNorm = mix(abs(cos(bouncePhase)), 0.72 + 0.24 * sin(bouncePhase), aSkew);
+      float az = aAzimuth + aSkew * bouncePhase * 0.85 + floor(nBounces) * 0.15;
+
+      float r;
+      float alpha = 1.0;
+      float confinedFlag = 1.0;
+
+      if (aAngle <= uCriticalAngle) {
+        r = uCoreRadius * rNorm * 0.92;
+        float angleRatio = aAngle / max(0.01, uCriticalAngle);
+        float bounceLoss = exp(-0.018 * angleRatio * angleRatio * nBounces);
+        alpha = max(0.25, bounceLoss);
+      } else {
+        confinedFlag = 0.0;
+        float firstHitZ = uCoreRadius * 0.5 / tanA;
+        float distPastWall = max(0.0, zLocal - firstHitZ);
+        float leakRadial = distPastWall * tan(aAngle - uCriticalAngle * 0.65) * 0.85;
+        r = uCoreRadius + min(uJacketRadius * 2.4, leakRadial);
+        alpha = exp(-distPastWall * 0.22) * 0.85;
+      }
+
+      if (uPulseClusters > 0.5) {
+        float pPhase = zFrac * uPulseClusters * 2.0 * PI - uTime * 6.0;
+        float pulseEnv = pow(0.5 + 0.5 * cos(pPhase), 2.2);
+        alpha *= (0.32 + 0.88 * pulseEnv);
+      }
+
+      vec3 pos = vec3(zPos, r * cos(az), r * sin(az));
+
+      float zPhysical = zFrac * uL_m;
+      float visAtten = exp(-uAlpha * zPhysical);
+      alpha *= mix(0.28, 1.0, visAtten);
+
+      float spmWave = 0.88 + 0.30 * sin(bouncePhase * 2.0 - uTime * 4.5) * uSPM;
+      vec3 base = mix(uBaseColor, aColor, uRainbow);
+      vec3 chirpTint = vec3(1.0 + 0.18 * uSPM * sin(bouncePhase), 1.0, 1.0 + 0.18 * uSPM * cos(bouncePhase));
+      vColor = base * chirpTint * spmWave * uIntensity * uBrightBoost;
+
+      if (uDanger > 0.5) {
+        float plasmaFlash = 0.5 + 0.5 * sin(zLocal * 2.5 - uTime * 14.0);
+        vColor = mix(vColor, vec3(1.0, 0.25, 0.35) * uBrightBoost * 1.4, 0.55 + 0.35 * plasmaFlash);
+      }
+
+      vAlpha = clamp(alpha * min(1.6, 0.65 + 0.45 * uBrightBoost), 0.0, 1.0);
+      vConfined = confinedFlag;
+
+      vec4 mv = modelViewMatrix * vec4(pos, 1.0);
+      gl_Position = projectionMatrix * mv;
+
+      float baseSize = confinedFlag > 0.5 ? 92.0 : 64.0;
+      float size = uPixelRatio * baseSize * (0.75 + 0.25 * uBrightBoost) / max(0.5, -mv.z);
+      gl_PointSize = clamp(size, 3.0, 32.0);
+    }
+  `;
+
+  const FRAG = `
+    varying vec3  vColor;
+    varying float vAlpha;
+    varying float vConfined;
+
+    void main() {
+      vec2 uv = gl_PointCoord - 0.5;
+      float d = length(uv) * 2.0;
+      if (d > 1.0) discard;
+
+      float coreHalo = exp(-d * d * 3.2);
+      float hotCenter = exp(-d * d * 14.0);
+      vec3 col = vColor * (1.6 * coreHalo) + vec3(1.0, 1.0, 1.0) * (0.95 * hotCenter * vConfined);
+      float a = coreHalo * vAlpha;
+      if (a < 0.015) discard;
+      gl_FragColor = vec4(col, min(1.0, a * 1.35));
+    }
+  `;
+
+  const S = {
+    inited: false, open: false,
+    scene: null, camera: null, renderer: null,
+    fiberGroup: null, injectorGroup: null, coreBeamMesh: null, raysMesh: null, uniforms: null,
+    animId: null, clock: null,
+    simTime: 0, lastFrameTime: 0,
+    L_m: 1000, visualLen: 34,
+    injector: 'dfb', rayCount: 900, brightBoost: 2.2,
+    cutaway: true,
+    camAngle: 0.42, camElev: 0.26, camDist: 38,
+    drag: null,
+    fps: 0, frames: 0, lastFpsTime: 0,
+    layerRadii: [0.65, 1.85, 2.55],
+    lastFiberKey: '',
+    liveParams: null,
+    rayData: [],
+    tracker: {
+      running: true,
+      elapsedSec: 0,
+      lastLogSec: 0,
+      totalLaunched: 0,
+      arrivedCount: 0,
+      leakedCount: 0,
+      absorbedCount: 0,
+      confinedActive: 0,
+      leakingActive: 0,
+      arrivalRatePerSec: 0,
+      recentArrivals: 0,
+      rateWindowSec: 0,
+      history: []
+    }
+  };
+
+  function logToLen(v){ return Math.pow(10, v / 20); }
+  function formatLen(m){
+    if (m < 1)    return m.toFixed(2) + ' m';
+    if (m < 1000) return m.toFixed(m < 10 ? 2 : m < 100 ? 1 : 0) + ' m';
+    return (m/1000).toFixed(m < 10000 ? 2 : 1) + ' km';
+  }
+
+  function lambdaToRGB(lam){
+    const stops = [
+      [200, [0.75, 0.30, 1.00]],
+      [380, [0.62, 0.25, 1.00]],
+      [440, [0.22, 0.48, 1.00]],
+      [490, [0.10, 0.92, 1.00]],
+      [530, [0.18, 1.00, 0.52]],
+      [575, [0.95, 1.00, 0.20]],
+      [610, [1.00, 0.68, 0.15]],
+      [660, [1.00, 0.25, 0.18]],
+      [800, [1.00, 0.18, 0.42]],
+      [850, [1.00, 0.28, 0.68]],
+      [1064,[1.00, 0.55, 0.22]],
+      [1310,[0.25, 0.95, 0.82]],
+      [1450,[0.45, 0.72, 1.00]],
+      [1550,[0.38, 0.88, 1.00]],
+      [2000,[0.82, 0.52, 1.00]]
+    ];
+    if (lam <= stops[0][0]) return stops[0][1];
+    if (lam >= stops[stops.length-1][0]) return stops[stops.length-1][1];
+    for (let i = 0; i < stops.length - 1; i++){
+      if (lam >= stops[i][0] && lam <= stops[i+1][0]){
+        const t = (lam - stops[i][0]) / (stops[i+1][0] - stops[i][0]);
+        return [
+          stops[i][1][0] + t*(stops[i+1][1][0] - stops[i][1][0]),
+          stops[i][1][1] + t*(stops[i+1][1][1] - stops[i][1][1]),
+          stops[i][1][2] + t*(stops[i+1][1][2] - stops[i][1][2])
+        ];
+      }
+    }
+    return [0.38, 0.88, 1.0];
+  }
+
+  function disposeGroup(grp){
+    if(!grp) return;
+    while(grp.children.length){
+      const ch = grp.children[0];
+      grp.remove(ch);
+      if(ch.geometry) ch.geometry.dispose();
+      if(ch.material){
+        if(Array.isArray(ch.material)) ch.material.forEach(m => m.dispose());
+        else ch.material.dispose();
+      }
+    }
+  }
+
+  function makeWireCylinder(radius, length, nTheta, nZ, color, opacity, thetaMax = Math.PI * 2){
+    const positions = [];
+    for (let i = 0; i <= nTheta; i++){
+      const th = (i / nTheta) * thetaMax;
+      if (th > Math.PI * 2 + 0.001) break;
+      const y = radius * Math.cos(th);
+      const z = radius * Math.sin(th);
+      positions.push(-length/2, y, z, length/2, y, z);
+    }
+    for (let j = 0; j <= nZ; j++){
+      const x = -length/2 + (j / nZ) * length;
+      for (let i = 0; i < nTheta; i++){
+        const t1 = (i / nTheta) * thetaMax;
+        const t2 = ((i+1) / nTheta) * thetaMax;
+        positions.push(
+          x, radius * Math.cos(t1), radius * Math.sin(t1),
+          x, radius * Math.cos(t2), radius * Math.sin(t2)
+        );
+      }
+    }
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    const mat = new THREE.LineBasicMaterial({ color, transparent:true, opacity, depthWrite:false });
+    return new THREE.LineSegments(geom, mat);
+  }
+
+  function addTubeMesh(group, yOff, zOff, radius, length, colorHex, wireOp, fillOp, thetaLength = Math.PI * 2){
+    const cylGeom = new THREE.CylinderGeometry(radius, radius, length, 24, 1, true, 0, thetaLength);
+    const cylMat = new THREE.MeshBasicMaterial({
+      color: colorHex, transparent: true, opacity: fillOp,
+      side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending
+    });
+    const mesh = new THREE.Mesh(cylGeom, cylMat);
+    mesh.rotation.z = Math.PI / 2;
+    mesh.position.set(0, yOff, zOff);
+    group.add(mesh);
+
+    const wire = makeWireCylinder(radius, length, 12, Math.max(4, Math.floor(length / 5)), colorHex, wireOp, thetaLength);
+    wire.position.set(0, yOff, zOff);
+    group.add(wire);
+  }
+
+  function rebuildFiber(){
+    if (!S.fiberGroup) return;
+    disposeGroup(S.fiberGroup);
+
+    const p = readParams();
+    const L = S.visualLen;
+    const [rCore, rJacket, rCoat] = S.layerRadii;
+    const thetaSpan = S.cutaway ? Math.PI * 1.42 : Math.PI * 2.0;
+
+    addTubeMesh(S.fiberGroup, 0, 0, rCoat, L, 0x475569, 0.14, 0.02, thetaSpan);
+    addTubeMesh(S.fiberGroup, 0, 0, rJacket, L, 0x38bdf8, 0.26, 0.04, thetaSpan);
+
+    if (p.fiber === 'capillary_simple') {
+      addTubeMesh(S.fiberGroup, 0, 0, rCore, L, 0x38bdf8, 0.52, 0.08, Math.PI * 2);
+    } else if (p.fiber === 'nanobore') {
+      const rNano = rCore * 0.52;
+      addTubeMesh(S.fiberGroup, 0, 0, rNano, L, 0x10b981, 0.62, 0.11, Math.PI * 2);
+      addTubeMesh(S.fiberGroup, 0, 0, rCore * 1.25, L, 0x059669, 0.22, 0.04, thetaSpan);
+    } else if (p.fiber === 'antiresonant') {
+      const N = 7;
+      const rTube = (rJacket - rCore) / 2.04;
+      const rRing = rCore + rTube;
+      for (let i = 0; i < N; i++){
+        const th = (i / N) * Math.PI * 2;
+        const ty = rRing * Math.cos(th);
+        const tz = rRing * Math.sin(th);
+        addTubeMesh(S.fiberGroup, ty, tz, rTube, L, 0xf59e0b, 0.42, 0.06, Math.PI * 2);
+      }
+    } else if (p.fiber === 'nested_ar') {
+      const N = 6;
+      const rOuter = (rJacket - rCore) / 2.04;
+      const rRing = rCore + rOuter;
+      const rInner = rOuter * 0.48;
+      for (let i = 0; i < N; i++){
+        const th = (i / N) * Math.PI * 2;
+        const ty = rRing * Math.cos(th);
+        const tz = rRing * Math.sin(th);
+        addTubeMesh(S.fiberGroup, ty, tz, rOuter, L, 0xa855f7, 0.42, 0.06, Math.PI * 2);
+        const ny = (rRing + (rOuter - rInner)) * Math.cos(th);
+        const nz = (rRing + (rOuter - rInner)) * Math.sin(th);
+        addTubeMesh(S.fiberGroup, ny, nz, rInner, L, 0x38bdf8, 0.50, 0.07, Math.PI * 2);
+      }
+    } else if (p.fiber === 'photonic_bandgap') {
+      addTubeMesh(S.fiberGroup, 0, 0, rCore, L, 0x22d3ee, 0.50, 0.07, Math.PI * 2);
+      const rings = [
+        { n: 12, r: rCore + (rJacket - rCore) * 0.35, holeR: (rJacket - rCore) * 0.14 },
+        { n: 18, r: rCore + (rJacket - rCore) * 0.72, holeR: (rJacket - rCore) * 0.13 }
+      ];
+      rings.forEach(rg => {
+        for (let i = 0; i < rg.n; i++){
+          const th = (i / rg.n) * Math.PI * 2;
+          if (S.cutaway && th > thetaSpan) continue;
+          const ty = rg.r * Math.cos(th);
+          const tz = rg.r * Math.sin(th);
+          addTubeMesh(S.fiberGroup, ty, tz, rg.holeR, L, 0x06b6d4, 0.28, 0.03, Math.PI * 2);
+        }
+      });
+    }
+
+    const rgb = lambdaToRGB(p.lambda0);
+    const beamColor = new THREE.Color(rgb[0], rgb[1], rgb[2]);
+    const effR = (p.fiber === 'nanobore' ? rCore * 0.48 : rCore * 0.78);
+    const coreBeamGeom = new THREE.CylinderGeometry(effR, effR, L, 32, 1, true);
+    const coreBeamMat = new THREE.MeshBasicMaterial({
+      color: beamColor,
+      transparent: true,
+      opacity: Math.min(0.42, 0.14 * S.brightBoost),
+      side: THREE.DoubleSide,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending
+    });
+    const coreBeam = new THREE.Mesh(coreBeamGeom, coreBeamMat);
+    coreBeam.rotation.z = Math.PI / 2;
+    S.fiberGroup.add(coreBeam);
+
+    const innerFilGeom = new THREE.CylinderGeometry(effR * 0.28, effR * 0.28, L, 20, 1, true);
+    const innerFilMat = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: Math.min(0.55, 0.18 * S.brightBoost),
+      side: THREE.DoubleSide,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending
+    });
+    const innerFil = new THREE.Mesh(innerFilGeom, innerFilMat);
+    innerFil.rotation.z = Math.PI / 2;
+    S.fiberGroup.add(innerFil);
+    S.coreBeamMesh = { outer: coreBeam, inner: innerFil };
+
+    rebuildInjectorAndDetector3D(L, rCore, rJacket, rCoat, beamColor);
+  }
+
+  function rebuildInjectorAndDetector3D(L, rCore, rJacket, rCoat, beamColor){
+    if (!S.injectorGroup) return;
+    disposeGroup(S.injectorGroup);
+
+    const injKey = S.injector;
+    const xIn = -L / 2;
+    const xOut = L / 2;
+
+    const coneLen = 3.2;
+    const coneGeom = new THREE.ConeGeometry(rCore * 0.92, coneLen, 28, 1, true);
+    const coneMat = new THREE.MeshBasicMaterial({
+      color: beamColor, transparent: true, opacity: 0.38,
+      side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending
+    });
+    const cone = new THREE.Mesh(coneGeom, coneMat);
+    cone.rotation.z = -Math.PI / 2;
+    cone.position.set(xIn - coneLen / 2, 0, 0);
+    S.injectorGroup.add(cone);
+
+    const housingMat = new THREE.MeshBasicMaterial({ color: 0x1e293b, wireframe: false, transparent: true, opacity: 0.85 });
+    const wireMat = new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.75 });
+
+    if (injKey === 'fp' || injKey === 'dfb' || injKey === 'sld' || injKey === 'led') {
+      const boxG = new THREE.BoxGeometry(3.4, rJacket * 1.1, rJacket * 1.4);
+      const boxM = new THREE.Mesh(boxG, housingMat);
+      boxM.position.set(xIn - coneLen - 1.8, 0, 0);
+      S.injectorGroup.add(boxM);
+      const edges = new THREE.LineSegments(new THREE.EdgesGeometry(boxG), wireMat);
+      edges.position.copy(boxM.position);
+      S.injectorGroup.add(edges);
+
+      if (injKey === 'dfb') {
+        for (let k = -2; k <= 2; k++){
+          const rg = makeWireCylinder(rJacket * 0.85, 0.15, 16, 1, 0xfbbf24, 0.85);
+          rg.position.set(boxM.position.x + k * 0.55, 0, 0);
+          S.injectorGroup.add(rg);
+        }
+      }
+      const lensG = new THREE.SphereGeometry(rCore * 0.85, 16, 16);
+      const lensM = new THREE.Mesh(lensG, new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.35, wireframe: true }));
+      lensM.position.set(xIn - coneLen * 0.75, 0, 0);
+      S.injectorGroup.add(lensM);
+    } else if (injKey === 'vcsel') {
+      for (let i = 0; i < 5; i++){
+        const dbr = makeWireCylinder(rJacket * (1.1 - i * 0.08), 0.35, 24, 1, i % 2 === 0 ? 0x38bdf8 : 0xa855f7, 0.8);
+        dbr.position.set(xIn - coneLen - 0.4 - i * 0.48, 0, 0);
+        S.injectorGroup.add(dbr);
+      }
+    } else if (injKey === 'edfl' || injKey === 'raman' || injKey === 'yb') {
+      const torusCol = injKey === 'yb' ? 0xf59e0b : injKey === 'raman' ? 0xa855f7 : 0x22c55e;
+      for (let i = 0; i < 3; i++){
+        const tGeom = new THREE.TorusGeometry(rJacket * 0.95, 0.14, 12, 32);
+        const tMesh = new THREE.Mesh(tGeom, new THREE.MeshBasicMaterial({ color: torusCol, wireframe: true, transparent: true, opacity: 0.75 }));
+        tMesh.position.set(xIn - coneLen - 1.5 - i * 0.65, 0, 0);
+        S.injectorGroup.add(tMesh);
+      }
+    } else if (injKey === 'ml' || injKey === 'sc') {
+      const octG = new THREE.CylinderGeometry(rJacket * 1.15, rJacket * 1.15, 4.0, 6, 2, false);
+      const octEdges = new THREE.LineSegments(new THREE.EdgesGeometry(octG), new THREE.LineBasicMaterial({ color: injKey === 'sc' ? 0xec4899 : 0xf43f5e }));
+      octEdges.rotation.z = Math.PI / 2;
+      octEdges.position.set(xIn - coneLen - 2.0, 0, 0);
+      S.injectorGroup.add(octEdges);
+    }
+
+    const detRing = makeWireCylinder(rCore * 1.15, 0.6, 24, 2, 0x4ade80, 0.9);
+    detRing.position.set(xOut + 0.3, 0, 0);
+    S.injectorGroup.add(detRing);
+
+    const detDiscG = new THREE.CircleGeometry(rCore * 1.12, 32);
+    const detDiscM = new THREE.MeshBasicMaterial({
+      color: 0x22c55e, transparent: true, opacity: 0.22,
+      side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending
+    });
+    const detDisc = new THREE.Mesh(detDiscG, detDiscM);
+    detDisc.rotation.y = Math.PI / 2;
+    detDisc.position.set(xOut + 0.05, 0, 0);
+    S.injectorGroup.add(detDisc);
+  }
+
+  function rebuildRays(){
+    if (!S.scene) return;
+    if (S.raysMesh){
+      S.scene.remove(S.raysMesh);
+      S.raysMesh.geometry.dispose();
+      S.raysMesh.material.dispose();
+      S.raysMesh = null;
+    }
+    const inj = INJECTORS[S.injector] || INJECTORS.dfb;
+    const p = readParams();
+    const n = S.rayCount;
+    const geom = new THREE.BufferGeometry();
+    const pos  = new Float32Array(n * 3);
+    const az   = new Float32Array(n);
+    const ang  = new Float32Array(n);
+    const ph   = new Float32Array(n);
+    const la   = new Float32Array(n);
+    const skew = new Float32Array(n);
+    const wsh  = new Float32Array(n);
+    const col  = new Float32Array(n * 3);
+
+    S.rayData = new Array(n);
+
+    for (let i = 0; i < n; i++){
+      az[i] = Math.random() * Math.PI * 2;
+      const u = Math.random();
+      const shapeExp = 0.55 + 0.65 * inj.coh;
+      ang[i] = inj.div * Math.pow(u, shapeExp);
+      ph[i] = Math.random() * Math.PI * 2;
+      la[i] = Math.random() * S.visualLen;
+      skew[i] = inj.skew * (0.3 + 0.7 * Math.random());
+      wsh[i] = (Math.random() - 0.5) * 2.0 * Math.min(1.0, inj.width / 80.0);
+
+      pos[i*3]   = la[i] - S.visualLen * 0.5;
+      pos[i*3+1] = 0;
+      pos[i*3+2] = 0;
+
+      if (inj.rainbow){
+        const lamRay = 420 + ((wsh[i] + 1) * 0.5) * 360;
+        const rgb = lambdaToRGB(lamRay);
+        col[i*3] = rgb[0]; col[i*3+1] = rgb[1]; col[i*3+2] = rgb[2];
+      } else {
+        const lamRay = Core.clamp(p.lambda0 + wsh[i] * inj.width * 2.5, 200, 2000);
+        const rgb = lambdaToRGB(lamRay);
+        col[i*3] = rgb[0]; col[i*3+1] = rgb[1]; col[i*3+2] = rgb[2];
+      }
+
+      S.rayData[i] = {
+        angle: ang[i],
+        launch: la[i],
+        wsh: wsh[i],
+        lastCycle: Math.floor(la[i] / Math.max(0.01, S.visualLen))
+      };
+    }
+
+    geom.setAttribute('position',         new THREE.BufferAttribute(pos, 3));
+    geom.setAttribute('aAzimuth',         new THREE.BufferAttribute(az, 1));
+    geom.setAttribute('aAngle',           new THREE.BufferAttribute(ang, 1));
+    geom.setAttribute('aPhase',           new THREE.BufferAttribute(ph, 1));
+    geom.setAttribute('aLaunch',          new THREE.BufferAttribute(la, 1));
+    geom.setAttribute('aSkew',            new THREE.BufferAttribute(skew, 1));
+    geom.setAttribute('aWavelengthShift', new THREE.BufferAttribute(wsh, 1));
+    geom.setAttribute('aColor',           new THREE.BufferAttribute(col, 3));
+
+    const rgb0 = lambdaToRGB(p.lambda0);
+    S.uniforms = {
+      uTime:            { value: S.simTime },
+      uLength:          { value: S.visualLen },
+      uL_m:             { value: S.L_m },
+      uCoreRadius:      { value: S.layerRadii[0] },
+      uJacketRadius:    { value: S.layerRadii[1] },
+      uCriticalAngle:   { value: Core.acceptanceAngleRad(p) },
+      uSpeed:           { value: 11.5 },
+      uAlpha:           { value: 0.001 },
+      uPixelRatio:      { value: Math.min(window.devicePixelRatio || 1, 2) },
+      uDanger:          { value: 0 },
+      uSPM:             { value: 1 },
+      uIntensity:       { value: 1.4 },
+      uBrightBoost:     { value: S.brightBoost },
+      uRainbow:         { value: (inj.rainbow || inj.width >= 30) ? 1 : 0 },
+      uPulseClusters:   { value: inj.pulses || 0 },
+      uDispersionBroad: { value: 0.4 },
+      uBaseColor:       { value: new THREE.Color(rgb0[0], rgb0[1], rgb0[2]) }
+    };
+
+    const mat = new THREE.ShaderMaterial({
+      uniforms: S.uniforms,
+      vertexShader: VERT,
+      fragmentShader: FRAG,
+      transparent: true, depthWrite: false,
+      blending: THREE.AdditiveBlending
+    });
+    const mesh = new THREE.Points(geom, mat);
+    mesh.frustumCulled = false;
+    S.scene.add(mesh);
+    S.raysMesh = mesh;
+  }
+
+  function updateLightTracker(dt){
+    const trk = S.tracker;
+    if (!trk.running || dt <= 0) return;
+
+    trk.elapsedSec += dt;
+    trk.rateWindowSec += dt;
+
+    const u = S.uniforms;
+    if (!u || !S.rayData.length) return;
+
+    const len = u.uLength.value;
+    const speed = u.uSpeed.value;
+    const crit = u.uCriticalAngle.value;
+    const dispBroad = u.uDispersionBroad.value;
+    const live = S.liveParams;
+    const alphaDbPerM = live ? live.alphaDbPerM : 1e-3;
+    const totalLossDb = alphaDbPerM * S.L_m;
+    const physTransProb = Core.clamp(Math.pow(10, -Math.min(18, totalLossDb) / 10), 0.03, 1.0);
+    const breakQuench = (live && live.bd.willBreak) ? 0.45 : 1.0;
+    const surviveProb = physTransProb * breakQuench;
+
+    let confinedNow = 0;
+    let leakingNow = 0;
+    let newlyArrived = 0;
+
+    for (let i = 0; i < S.rayData.length; i++){
+      const r = S.rayData[i];
+      const isConfined = r.angle <= crit;
+      if (isConfined) confinedNow++; else leakingNow++;
+
+      const sf = Math.cos(r.angle) * (1.0 - 0.08 * r.wsh * dispBroad);
+      const rawZ = S.simTime * speed * Math.max(0.25, sf) + r.launch;
+      const cycle = Math.floor(rawZ / Math.max(0.01, len));
+
+      if (cycle > r.lastCycle){
+        const transits = cycle - r.lastCycle;
+        r.lastCycle = cycle;
+        trk.totalLaunched += transits;
+
+        if (!isConfined){
+          trk.leakedCount += transits;
+        } else {
+          const hash = Math.sin(i * 12.9898 + cycle * 78.233) * 43758.5453;
+          const rand01 = hash - Math.floor(hash);
+          if (rand01 <= surviveProb){
+            trk.arrivedCount += transits;
+            newlyArrived += transits;
+          } else {
+            trk.absorbedCount += transits;
+          }
+        }
+      }
+    }
+
+    trk.confinedActive = confinedNow;
+    trk.leakingActive = leakingNow;
+    trk.recentArrivals += newlyArrived;
+
+    if (trk.rateWindowSec >= 0.4){
+      trk.arrivalRatePerSec = Math.round(trk.recentArrivals / trk.rateWindowSec);
+      trk.recentArrivals = 0;
+      trk.rateWindowSec = 0;
+    }
+
+    if (trk.elapsedSec - trk.lastLogSec >= 0.5){
+      trk.lastLogSec = trk.elapsedSec;
+      const p = live ? live.p : readParams();
+      const totalProcessed = Math.max(1, trk.arrivedCount + trk.leakedCount + trk.absorbedCount);
+      const transPct = (trk.arrivedCount / totalProcessed) * 100;
+      trk.history.push({
+        time_s: Number(trk.elapsedSec.toFixed(2)),
+        lights_arrived_interval: newlyArrived,
+        cumulative_lights_arrived: trk.arrivedCount,
+        arrival_rate_per_s: trk.arrivalRatePerSec,
+        active_confined_rays: trk.confinedActive,
+        active_leaking_rays: trk.leakingActive,
+        cumulative_leaked: trk.leakedCount,
+        cumulative_absorbed: trk.absorbedCount,
+        effective_transmission_pct: Number(transPct.toFixed(2)),
+        fiber_model: p.fiber,
+        injector: S.injector,
+        cable_length_m: Number(S.L_m.toFixed(2)),
+        wavelength_nm: p.lambda0,
+        gas_species: p.gas,
+        pressure_bar: p.P,
+        temperature_C: p.T,
+        peak_power_MW: p.PMW,
+        core_diameter_um: p.core
+      });
+      if (trk.history.length > 5000) trk.history.shift();
+    }
+
+    renderTrackerHud();
+  }
+
+  function renderTrackerHud(){
+    const trk = S.tracker;
+    const badge = $('trackerStateBadge');
+    if (badge){
+      badge.textContent = trk.running ? 'TRACKING' : 'PAUSED';
+      badge.className = 'trackerStateBadge ' + (trk.running ? 'running' : 'paused');
+    }
+    const dot = $('labSyncDot');
+    if (dot) dot.style.background = trk.running ? '#22c55e' : '#f59e0b';
+
+    $('trkArrivedCount').textContent = trk.arrivedCount.toLocaleString();
+    $('trkArrivalRate').textContent = `${trk.arrivalRatePerSec.toLocaleString()} /s`;
+    $('trkConfinedRatio').textContent = `${trk.confinedActive} / ${S.rayCount}`;
+    $('trkLostSummary').textContent = `${trk.leakedCount.toLocaleString()} / ${trk.absorbedCount.toLocaleString()}`;
+    $('trkElapsed').textContent = `${trk.elapsedSec.toFixed(1)} s`;
+    $('trkSamples').textContent = String(trk.history.length);
+
+    const total = trk.arrivedCount + trk.leakedCount + trk.absorbedCount;
+    const pct = total > 0 ? (trk.arrivedCount / total) * 100 : (S.rayCount > 0 ? (trk.confinedActive / S.rayCount) * 100 : 100);
+    const pctEl = $('trkTransPct');
+    if (pctEl){
+      pctEl.textContent = `${pct.toFixed(1)}%`;
+      pctEl.style.color = pct > 70 ? '#4ade80' : pct > 35 ? '#fbbf24' : '#f87171';
+    }
+  }
+
+  function startTracking(){
+    S.tracker.running = true;
+    renderTrackerHud();
+    showToast('Light tracking & propagation resumed');
+  }
+  function stopTracking(){
+    S.tracker.running = false;
+    renderTrackerHud();
+    showToast('Light tracking paused');
+  }
+  function resetTracking(){
+    const trk = S.tracker;
+    trk.elapsedSec = 0;
+    trk.lastLogSec = 0;
+    trk.totalLaunched = 0;
+    trk.arrivedCount = 0;
+    trk.leakedCount = 0;
+    trk.absorbedCount = 0;
+    trk.arrivalRatePerSec = 0;
+    trk.recentArrivals = 0;
+    trk.rateWindowSec = 0;
+    trk.history = [];
+    S.simTime = 0;
+    if (S.uniforms) S.uniforms.uTime.value = 0;
+    S.rayData.forEach(r => { r.lastCycle = Math.floor(r.launch / Math.max(0.01, S.visualLen)); });
+    renderTrackerHud();
+    showToast('Reset light arrival counter & log');
+  }
+
+  function downloadTrackingData(format = 'csv'){
+    const trk = S.tracker;
+    const p = readParams();
+    const rows = trk.history.length ? trk.history : [{
+      time_s: Number(trk.elapsedSec.toFixed(2)),
+      lights_arrived_interval: 0,
+      cumulative_lights_arrived: trk.arrivedCount,
+      arrival_rate_per_s: trk.arrivalRatePerSec,
+      active_confined_rays: trk.confinedActive,
+      active_leaking_rays: trk.leakingActive,
+      cumulative_leaked: trk.leakedCount,
+      cumulative_absorbed: trk.absorbedCount,
+      effective_transmission_pct: Number(((trk.confinedActive / Math.max(1, S.rayCount)) * 100).toFixed(2)),
+      fiber_model: p.fiber,
+      injector: S.injector,
+      cable_length_m: Number(S.L_m.toFixed(2)),
+      wavelength_nm: p.lambda0,
+      gas_species: p.gas,
+      pressure_bar: p.P,
+      temperature_C: p.T,
+      peak_power_MW: p.PMW,
+      core_diameter_um: p.core
+    }];
+
+    if (format === 'json'){
+      const payload = {
+        exportedAt: new Date().toISOString(),
+        summary: {
+          elapsedSec: Number(trk.elapsedSec.toFixed(2)),
+          totalLaunched: trk.totalLaunched,
+          lightsComingArrived: trk.arrivedCount,
+          arrivalRatePerSec: trk.arrivalRatePerSec,
+          leakedLights: trk.leakedCount,
+          absorbedLights: trk.absorbedCount,
+          activeRayCount: S.rayCount,
+          confinedActiveRays: trk.confinedActive,
+          leakingActiveRays: trk.leakingActive
+        },
+        mirroredMainParameters: p,
+        labInternalParameters: {
+          injectorKey: S.injector,
+          injectorName: INJECTORS[S.injector].name,
+          cableLength_m: S.L_m,
+          rayCount: S.rayCount,
+          intensityBoost: S.brightBoost
+        },
+        timeSeries: rows
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type:'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `hcf_light_tracking_${p.fiber}_${S.injector}.json`; a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      showToast(`Downloaded ${rows.length} tracking records (JSON)`);
+    } else {
+      const headers = Object.keys(rows[0]);
+      const csvLines = [
+        headers.join(','),
+        ...rows.map(r => headers.map(k => JSON.stringify(r[k] ?? '')).join(','))
+      ];
+      const blob = new Blob([csvLines.join('\n')], { type:'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `hcf_light_tracking_${p.fiber}_${S.injector}.csv`; a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      showToast(`Downloaded ${rows.length} tracking records (CSV)`);
+    }
+  }
+
+  function updateCamera(){
+    const d = S.camDist, ca = S.camAngle, ce = S.camElev;
+    S.camera.position.set(
+      d * Math.sin(ca) * Math.cos(ce),
+      d * Math.sin(ce),
+      d * Math.cos(ca) * Math.cos(ce)
+    );
+    S.camera.lookAt(0, 0, 0);
+  }
+
+  function renderCrossSectionPane(){
+    const live = S.liveParams;
+    const p = live ? live.p : readParams();
+    const inj = INJECTORS[S.injector] || INJECTORS.dfb;
+    drawFiberAndInjectorSchematic($('labCrossCanvas'), p, S.injector, inj);
+    const infoEl = $('labCrossInfo');
+    if (infoEl){
+      const f = Core.FIBER[p.fiber];
+      infoEl.innerHTML = `
+        <div style="font-weight:700;color:#fb923c;margin-bottom:3px">${f.name} + ${inj.name}</div>
+        <div><strong>Waveguide Physics:</strong> ${f.desc}</div>
+        <div style="margin-top:4px"><strong>Laser Coupling:</strong> ${inj.desc} (θ_div = ${(inj.div*57.2958).toFixed(1)}°, θ_accept = ${((live ? live.thetaCritVisual : 0.25)*57.2958).toFixed(1)}°).</div>
+      `;
+    }
+  }
+
+  function renderMirrorPane(){
+    const el = $('labMirrorPane');
+    if (!el) return;
+    const p = readParams();
+    el.innerHTML = `
+      <div class="labSection">Mirrored Main Panel Parameters</div>
+      <div style="font-size:11px;color:#94a3b8;margin-bottom:8px;line-height:1.4">
+        The 3D Lab mirrors all physical fiber &amp; gas parameters live from the main simulator while taking <strong>Light Injector</strong>, <strong>Cable Length</strong>, and <strong>Rays/Pulses</strong> from the Lab controls below.
+      </div>
+      <div class="mirrorGrid">
+        <div class="mirrorField" style="grid-column:span 2">
+          <label>Fiber Model</label>
+          <select data-mirror="fiberModel">
+            ${Object.entries(Core.FIBER).map(([k,v]) => `<option value="${k}" ${p.fiber===k?'selected':''}>${v.name}</option>`).join('')}
+          </select>
+        </div>
+        <div class="mirrorField">
+          <label>Gas Species</label>
+          <select data-mirror="gasSpecies">
+            ${Object.keys(Core.GAS).map(g => `<option value="${g}" ${p.gas===g?'selected':''}>${g}</option>`).join('')}
+          </select>
+        </div>
+        <div class="mirrorField">
+          <label>Central λ₀ (nm)</label>
+          <input type="number" min="200" max="2000" step="10" value="${p.lambda0}" data-mirror="lambdaCenter" />
+        </div>
+        <div class="mirrorField">
+          <label>Pressure (bar)</label>
+          <input type="number" min="0" max="10" step="0.1" value="${p.P}" data-mirror="pressureNum" />
+        </div>
+        <div class="mirrorField">
+          <label>Temp (°C)</label>
+          <input type="number" min="-20" max="80" step="1" value="${p.T}" data-mirror="temperatureNum" />
+        </div>
+        <div class="mirrorField">
+          <label>Peak Power (MW)</label>
+          <input type="number" min="0.1" max="150" step="0.5" value="${p.PMW}" data-mirror="peakPowerNum" />
+        </div>
+        <div class="mirrorField">
+          <label>Core Ø (μm)</label>
+          <input type="number" min="10" max="50" step="1" value="${p.core}" data-mirror="coreDiaNum" />
+        </div>
+      </div>
+    `;
+    el.querySelectorAll('[data-mirror]').forEach(inp => {
+      inp.addEventListener('change', (e) => {
+        const targetId = e.target.dataset.mirror;
+        const mainEl = $(targetId);
+        if (mainEl){
+          mainEl.value = e.target.value;
+          if ( targetId.endsWith('Num') ) mainEl.value = numInput(targetId);
+          syncSliders();
+          scheduleRender();
+        }
+      });
+    });
+  }
+
+  function renderTelemetry(){
+    const p = $('labTelemetryPane');
+    if (!p) return;
+    const inj = INJECTORS[S.injector] || INJECTORS.dfb;
+    const live = S.liveParams;
+    const fInfo = live ? Core.FIBER[live.p.fiber] : Core.FIBER.antiresonant;
+    const alphaDbPerM = live ? live.alphaDbPerM : 2.3e-5;
+    const totalLossDb = alphaDbPerM * S.L_m;
+    const transmission = Math.pow(10, -Math.min(30, totalLossDb) / 10) * 100;
+    const trk = S.tracker;
+    p.innerHTML = `
+      <div class="labSection">Live Propagation &amp; Detector Telemetry</div>
+      <div class="labRow"><span class="k">Render Frame Rate</span><span class="v">${S.fps} fps</span></div>
+      <div class="labRow"><span class="k">Guidance Mode</span><span class="v">${fInfo.mechanism}</span></div>
+      <div class="labRow"><span class="k">Active Rays / Pulses</span><span class="v">${S.rayCount.toLocaleString()}</span></div>
+      <div class="labRow"><span class="k">Guided in Core</span><span class="v ok">${trk.confinedActive.toLocaleString()} (${((trk.confinedActive/Math.max(1,S.rayCount))*100).toFixed(1)}%)</span></div>
+      <div class="labRow"><span class="k">Cladding Leakage</span><span class="v warn">${trk.leakingActive.toLocaleString()}</span></div>
+      <div class="labRow"><span class="k">Lights Arrived (Total)</span><span class="v ok">${trk.arrivedCount.toLocaleString()}</span></div>
+      <div class="labRow"><span class="k">Arrival Rate</span><span class="v">${trk.arrivalRatePerSec.toLocaleString()} lights/s</span></div>
+      <div class="labRow"><span class="k">Cable Length</span><span class="v">${formatLen(S.L_m)}</span></div>
+      <div class="labRow"><span class="k">Physical Loss (α·L)</span><span class="v">${totalLossDb < 0.01 ? totalLossDb.toExponential(2) : totalLossDb.toFixed(2)} dB</span></div>
+      <div class="labRow"><span class="k">Core Transmission</span><span class="v">${transmission < 0.01 ? transmission.toExponential(2) : transmission.toFixed(2)}%</span></div>
+      <div class="labRow"><span class="k">Simulation Time</span><span class="v">${S.simTime.toFixed(2)} s</span></div>
+      <div class="labRow"><span class="k">Injector Source</span><span class="v">${inj.name.split('(')[0].trim()}</span></div>
+      ${live ? `<div class="labRow"><span class="k">Ionization Breakdown</span><span class="v ${live.bd.willBreak ? 'hot' : 'ok'}">${live.bd.willBreak ? '⚠ PLASMA (' + live.bd.regime + ')' : 'Stable (' + live.bd.regime + ')'}</span></div>` : ''}
+    `;
+  }
+
+  function renderInjectorPane(){
+    const p = $('labInjectorPane');
+    if (!p) return;
+    const inj = INJECTORS[S.injector] || INJECTORS.dfb;
+    const live = S.liveParams;
+    const effLam = live ? live.p.lambda0 : inj.lam;
+    const effP   = live ? live.p.PMW * 1e6 : inj.power;
+    const dLam   = effLam - inj.lam;
+    const mismatch = Math.abs(dLam) > 50;
+    p.innerHTML = `
+      <div class="labSection">Selected Lab Injector</div>
+      <div class="labRow"><span class="k">Laser Architecture</span><span class="v">${inj.name}</span></div>
+      <div class="labRow"><span class="k">Design Details</span><span class="v" style="max-width:62%;text-align:right;white-space:normal">${inj.desc}</span></div>
+      <div class="labSection">Mirrored Operating Point (Main Panel)</div>
+      <div class="labRow"><span class="k">λ₀ (Mirrored)</span><span class="v">${effLam} nm</span></div>
+      <div class="labRow"><span class="k">P_peak (Mirrored)</span><span class="v">${(effP/1e6).toFixed(2)} MW</span></div>
+      <div class="labSection">Injector Intrinsic Specs</div>
+      <div class="labRow"><span class="k">Nominal λ</span><span class="v">${inj.lam} nm</span></div>
+      <div class="labRow"><span class="k">Wavelength Offset Δλ</span><span class="v ${mismatch ? 'warn' : ''}">${dLam > 0 ? '+' : ''}${dLam.toFixed(1)} nm</span></div>
+      <div class="labRow"><span class="k">Spectral Linewidth</span><span class="v">${inj.width < 1 ? inj.width.toFixed(3) : inj.width.toFixed(1)} nm</span></div>
+      <div class="labRow"><span class="k">Pulse Duration</span><span class="v">${inj.pw >= 1e-10 ? (inj.pw*1e9).toFixed(2) + ' ns (CW/Q-sw)' : (inj.pw*1e15).toFixed(0) + ' fs (Ultrafast)'}</span></div>
+      <div class="labRow"><span class="k">Beam Divergence θ_div</span><span class="v">${(inj.div*57.2958).toFixed(1)}°</span></div>
+      <div class="labRow"><span class="k">Spatial Coherence</span><span class="v">${(inj.coh*100).toFixed(0)}%</span></div>
+      <div class="labRow"><span class="k">Skew Ray Fraction</span><span class="v">${(inj.skew*100).toFixed(0)}%</span></div>
+      <button class="labPushBtn" id="labPushLambda">→ Sync Injector Nominal λ (${inj.lam} nm) to Main Panel</button>
+    `;
+    const pushBtn = $('labPushLambda');
+    if (pushBtn){
+      pushBtn.addEventListener('click', () => {
+        $('lambdaCenter').value = String(inj.lam);
+        showToast(`Synced central wavelength to ${inj.lam} nm`);
+        scheduleRender();
+      });
+    }
+  }
+
+  function renderMaterialPane(){
+    const p = $('labMaterialPane');
+    if (!p) return;
+    const live = S.liveParams;
+    const fInfo = live ? Core.FIBER[live.p.fiber] : Core.FIBER.antiresonant;
+    const nCore = live ? live.nCore : 1.00028;
+    const nGlass = live ? live.nGlass : 1.453;
+    const critical = live ? live.thetaCritVisual : 0.25;
+    const alphaDbPerM = live ? live.alphaDbPerM : 2.3e-5;
+    const alphaDbkm = alphaDbPerM * 1e3;
+    const totalLoss = alphaDbPerM * S.L_m;
+    const transmission = Math.pow(10, -Math.min(30, totalLoss) / 10) * 100;
+    const [r0, r1, r2] = S.layerRadii;
+    const fmtDb = v => (v >= 1e3 || (v > 0 && v < 0.01)) ? v.toExponential(2) : v.toFixed(3);
+    p.innerHTML = `
+      <div class="labSection">Hollow-Core Waveguide Physics</div>
+      <div class="labRow"><span class="k">Architecture</span><span class="v">${fInfo.name}</span></div>
+      <div class="labRow"><span class="k">Mechanism</span><span class="v">${fInfo.mechanism}</span></div>
+      <div class="labRow"><span class="k">Core Index (Sellmeier n₁)</span><span class="v">n₁ = ${nCore.toFixed(7)}</span></div>
+      <div class="labRow"><span class="k">Silica Strut Index (n_SiO₂)</span><span class="v">n_g = ${nGlass.toFixed(5)}</span></div>
+      ${fInfo.wall_nm ? `<div class="labRow"><span class="k">Membrane Thickness t</span><span class="v">${fInfo.wall_nm} nm</span></div>` : ''}
+      <div class="labRow"><span class="k">Grazing Acceptance θ_acc</span><span class="v">${(critical*57.2958).toFixed(2)}°</span></div>
+      <div class="labSection">Attenuation &amp; Transmission</div>
+      <div class="labRow"><span class="k">Physical Attenuation α</span><span class="v">${fmtDb(alphaDbkm)} dB/km</span></div>
+      <div class="labRow"><span class="k">Cable Length L</span><span class="v">${formatLen(S.L_m)}</span></div>
+      <div class="labRow"><span class="k">Total Link Loss</span><span class="v">${fmtDb(totalLoss)} dB</span></div>
+      <div class="labRow"><span class="k">Output Transmission</span><span class="v">${transmission < 0.01 ? transmission.toExponential(2) : transmission.toFixed(2)}%</span></div>
+      <div class="labSection">3D Visual Scaling</div>
+      <div class="labRow"><span class="k">Core / Jacket / Coat</span><span class="v">${r0.toFixed(2)} / ${r1.toFixed(2)} / ${r2.toFixed(2)} u</span></div>
+    `;
+  }
+
+  function drawChart(){
+    const c = $('labChart');
+    if (!c) return;
+    const dpr = window.devicePixelRatio || 1;
+    const w = c.clientWidth || 320, h = c.clientHeight || 220;
+    if (w < 2 || h < 2) return;
+    c.width = Math.round(w * dpr);
+    c.height = Math.round(h * dpr);
+    const ctx = c.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+
+    const pad = { l:48, r:14, t:26, b:30 };
+    const pw = w - pad.l - pad.r;
+    const ph = h - pad.t - pad.b;
+    if (pw <= 4 || ph <= 4) return;
+
+    ctx.strokeStyle = 'rgba(148,163,184,0.16)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++){
+      const y = pad.t + (i / 4) * ph;
+      ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + pw, y); ctx.stroke();
+    }
+    for (let i = 0; i <= 4; i++){
+      const x = pad.l + (i / 4) * pw;
+      ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, pad.t + ph); ctx.stroke();
+    }
+
+    const alphaDbPerM = (S.liveParams ? S.liveParams.alphaDbPerM : 1e-3);
+    const alphaDbkm_real = alphaDbPerM * 1e3;
+    const totalDb_real = Math.max(0.5, alphaDbPerM * S.L_m);
+    const yMaxDb = Math.max(5, Math.min(60, Math.ceil(totalDb_real * 1.15)));
+
+    ctx.fillStyle = 'rgba(148,163,184,0.9)';
+    ctx.font = '10px Inter, system-ui, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    for (let i = 0; i <= 4; i++){
+      const val = -(i / 4) * yMaxDb;
+      ctx.fillText(val.toFixed(1) + ' dB', pad.l - 5, pad.t + (i / 4) * ph);
+    }
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText('0 m', pad.l, pad.t + ph + 7);
+    ctx.fillText(formatLen(S.L_m * 0.5), pad.l + pw * 0.5, pad.t + ph + 7);
+    ctx.fillText(formatLen(S.L_m), pad.l + pw, pad.t + ph + 7);
+
+    const grad = ctx.createLinearGradient(pad.l, 0, pad.l + pw, 0);
+    grad.addColorStop(0, '#fb923c');
+    grad.addColorStop(1, '#c2410c');
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = 2.5;
+    ctx.shadowColor = 'rgba(234,88,12,0.45)';
+    ctx.shadowBlur = 6;
+    ctx.beginPath();
+    const steps = 120;
+    for (let i = 0; i <= steps; i++){
+      const t = i / steps;
+      const P_dB = -alphaDbPerM * (t * S.L_m);
+      const x = pad.l + t * pw;
+      const y = pad.t + ph * Math.min(1, Math.max(0, -P_dB / yMaxDb));
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    ctx.fillStyle = 'rgba(226,232,240,0.95)';
+    ctx.font = '700 11px Inter, system-ui, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText('Optical Power Decay Along Cable', pad.l, 5);
+    ctx.fillStyle = '#fb923c';
+    ctx.font = '600 10px Inter, system-ui, sans-serif';
+    ctx.textAlign = 'right';
+    const dbkStr = (alphaDbkm_real >= 1e3 || alphaDbkm_real < 0.01) ? alphaDbkm_real.toExponential(2) : alphaDbkm_real.toFixed(3);
+    ctx.fillText(`α = ${dbkStr} dB/km`, pad.l + pw, 5);
+  }
+
+  function onResize(){
+    const cont = $('lab3DCanvas');
+    if (!cont || !S.renderer) return;
+    const w = cont.clientWidth, h = cont.clientHeight;
+    if (w < 2 || h < 2) return;
+    S.camera.aspect = w / h;
+    S.camera.updateProjectionMatrix();
+    S.renderer.setSize(w, h);
+    drawChart();
+    renderCrossSectionPane();
+  }
+
+  function animate(){
+    if (!S.open) return;
+    S.animId = requestAnimationFrame(animate);
+    const now = performance.now();
+    const dt = S.lastFrameTime ? Math.min(0.1, (now - S.lastFrameTime) / 1000) : 0.016;
+    S.lastFrameTime = now;
+
+    if (S.tracker.running){
+      S.simTime += dt;
+      if (S.uniforms) S.uniforms.uTime.value = S.simTime;
+      updateLightTracker(dt);
+    }
+
+    updateCamera();
+
+    S.frames++;
+    if (now - S.lastFpsTime > 450){
+      S.fps = Math.round((S.frames * 1000) / (now - S.lastFpsTime));
+      S.frames = 0;
+      S.lastFpsTime = now;
+      renderTelemetry();
+    }
+    S.renderer.render(S.scene, S.camera);
+  }
+
+  function setLength(L_m){
+    S.L_m = L_m;
+    const logL = Math.log10(Math.max(1, L_m));
+    S.visualLen = 14 + 38 * (logL / 5);
+    S.camDist = 18 + S.visualLen * 0.52;
+    if (S.uniforms){
+      S.uniforms.uLength.value = S.visualLen;
+      S.uniforms.uL_m.value = S.L_m;
+    }
+    rebuildFiber();
+    syncFromMain();
+  }
+
+  function setInjector(key){
+    if (!INJECTORS[key]) return;
+    S.injector = key;
+    rebuildFiber();
+    rebuildRays();
+    syncFromMain();
+    if (typeof scheduleRender === 'function') scheduleRender();
+  }
+
+  function setRayCount(n){
+    S.rayCount = n;
+    rebuildRays();
+    syncFromMain();
+  }
+
+  function setBrightBoost(val){
+    S.brightBoost = val;
+    if (S.uniforms) S.uniforms.uBrightBoost.value = val;
+    if (S.coreBeamMesh){
+      S.coreBeamMesh.outer.material.opacity = Math.min(0.45, 0.14 * val);
+      S.coreBeamMesh.inner.material.opacity = Math.min(0.60, 0.18 * val);
+    }
+  }
+
+  function syncFromMain(){
+    const p = readParams();
+    const bd = Core.breakdown(p);
+    const att = Core.attenuation(p.lambda0, p);
+    const sp = Core.spmParams(p, S.L_m);
+    const gd = Core.gasDispersionAt(p.lambda0, p.gas, p.P, p.T);
+
+    const coreR = 0.42 + 0.65 * ((p.core - 10) / 40);
+    const cladR = coreR * 2.55;
+    const coatR = coreR * 3.35;
+    const fiberKey = `${p.fiber}|${coreR.toFixed(3)}|${p.lambda0}|${S.cutaway}`;
+
+    S.layerRadii = [coreR, cladR, coatR];
+
+    if (S.inited && S.lastFiberKey !== fiberKey){
+      S.lastFiberKey = fiberKey;
+      rebuildFiber();
+    }
+
+    const f = Core.FIBER[p.fiber] || Core.FIBER.capillary_simple;
+    const nCore = gd.n;
+    const nGlass = Core.silicaIndex(p.lambda0);
+    const thetaVis = Core.acceptanceAngleRad(p);
+
+    const alphaDbPerM = Number.isFinite(att.total) ? att.total : 1e-3;
+
+    if (S.uniforms){
+      S.uniforms.uCoreRadius.value = p.fiber === 'nanobore' ? coreR * 0.52 : coreR;
+      S.uniforms.uJacketRadius.value = cladR;
+      S.uniforms.uCriticalAngle.value = thetaVis;
+
+      const VISUAL_MAX_NP = 1.65;
+      const totalNp = Math.min(VISUAL_MAX_NP, Math.max(0.04, alphaDbPerM * 0.115129 * S.L_m));
+      S.uniforms.uAlpha.value = totalNp / Math.max(1, S.L_m);
+
+      const intensity = 1.05 + Math.min(1.6, Math.sqrt(Math.max(0, p.PMW)) * 0.25);
+      S.uniforms.uIntensity.value = intensity;
+      S.uniforms.uBrightBoost.value = S.brightBoost;
+
+      const spmScale = Math.min(1.8, 0.5 + 0.38 * Math.log10(1 + Math.abs(sp.PhiNL)));
+      S.uniforms.uSPM.value = Number.isFinite(spmScale) ? spmScale : 1;
+
+      const dispMag = Math.min(2.0, Math.abs(sp.D_tot) / 25.0);
+      S.uniforms.uDispersionBroad.value = dispMag;
+
+      S.uniforms.uDanger.value = bd.willBreak ? 1 : 0;
+
+      const rgb = lambdaToRGB(p.lambda0);
+      S.uniforms.uBaseColor.value.setRGB(rgb[0], rgb[1], rgb[2]);
+    }
+
+    S.liveParams = { p, bd, att, sp, nCore, nGlass, thetaCritVisual: thetaVis, alphaDbPerM, coreR, cladR, coatR };
+
+    if (S.rayData.length){
+      let conf = 0;
+      for (let i = 0; i < S.rayData.length; i++) if (S.rayData[i].angle <= thetaVis) conf++;
+      S.tracker.confinedActive = conf;
+      S.tracker.leakingActive = S.rayData.length - conf;
+    }
+
+    const fiberShort = f.name.split('(')[0].trim();
+    const summaryEl = $('labLiveSummary');
+    if (summaryEl) summaryEl.textContent =
+      `${fiberShort} · ${p.gas} @ ${p.P.toFixed(2)} bar · ${p.T.toFixed(1)} °C · λ₀=${p.lambda0} nm · ${p.PMW.toFixed(1)} MW · 2a=${p.core} μm`;
+
+    if (S.open){
+      renderCrossSectionPane();
+      renderMirrorPane();
+      renderTelemetry();
+      renderInjectorPane();
+      renderMaterialPane();
+      drawChart();
+      renderTrackerHud();
+    }
+    return true;
+  }
+
+  function setupInspector(){
+    const panel = $('labInspector');
+    const header = $('labInspectorHeader');
+    const resize = $('labInspectorResize');
+    const body = $('labInspectorBody');
+    const collapseBtn = $('labInspectorCollapse');
+
+    let drag = null;
+    header.addEventListener('pointerdown', (e) => {
+      if (e.target.closest('.labTab') || e.target.closest('#labInspectorCollapse')) return;
+      drag = { x:e.clientX, y:e.clientY, left:panel.offsetLeft, top:panel.offsetTop };
+      header.setPointerCapture(e.pointerId);
+    });
+    header.addEventListener('pointermove', (e) => {
+      if (!drag) return;
+      panel.style.left  = Math.max(6, drag.left + e.clientX - drag.x) + 'px';
+      panel.style.top   = Math.max(50, drag.top  + e.clientY - drag.y) + 'px';
+      panel.style.right = 'auto';
+    });
+    const endDrag = (e) => { if (drag){ drag = null; try { header.releasePointerCapture(e.pointerId); } catch(_){} } };
+    header.addEventListener('pointerup', endDrag);
+    header.addEventListener('pointercancel', endDrag);
+
+    let rz = null;
+    resize.addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+      rz = { x:e.clientX, y:e.clientY, w:panel.offsetWidth, h:panel.offsetHeight };
+      resize.setPointerCapture(e.pointerId);
+    });
+    resize.addEventListener('pointermove', (e) => {
+      if (!rz) return;
+      panel.style.width  = Math.max(290, rz.w + e.clientX - rz.x) + 'px';
+      panel.style.height = Math.max(240, rz.h + e.clientY - rz.y) + 'px';
+      drawChart();
+      renderCrossSectionPane();
+    });
+    const endRz = (e) => { if (rz){ rz = null; try { resize.releasePointerCapture(e.pointerId); } catch(_){} drawChart(); renderCrossSectionPane(); } };
+    resize.addEventListener('pointerup', endRz);
+    resize.addEventListener('pointercancel', endRz);
+
+    collapseBtn.addEventListener('click', () => {
+      body.classList.toggle('collapsed');
+      collapseBtn.textContent = body.classList.contains('collapsed') ? '+' : '−';
+    });
+
+    panel.querySelectorAll('.labTab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.labtab;
+        panel.querySelectorAll('.labTab').forEach(b => b.classList.toggle('active', b === btn));
+        panel.querySelectorAll('.labPane').forEach(p => p.classList.toggle('active', p.dataset.labpane === key));
+        if (key === 'chart') requestAnimationFrame(drawChart);
+        else if (key === 'cross') requestAnimationFrame(renderCrossSectionPane);
+        else if (key === 'mirror') renderMirrorPane();
+        else if (key === 'material') renderMaterialPane();
+        else if (key === 'injector') renderInjectorPane();
+        else if (key === 'telemetry') renderTelemetry();
+      });
+    });
+  }
+
+  function setupOrbit(canvasEl){
+    canvasEl.addEventListener('pointerdown', (e) => {
+      S.drag = { x:e.clientX, y:e.clientY };
+      canvasEl.setPointerCapture(e.pointerId);
+    });
+    canvasEl.addEventListener('pointermove', (e) => {
+      if (!S.drag) return;
+      const dx = e.clientX - S.drag.x;
+      const dy = e.clientY - S.drag.y;
+      S.drag.x = e.clientX; S.drag.y = e.clientY;
+      S.camAngle -= dx * 0.005;
+      S.camElev = Math.max(-1.25, Math.min(1.25, S.camElev + dy * 0.005));
+    });
+    const end = (e) => { S.drag = null; try { canvasEl.releasePointerCapture(e.pointerId); } catch(_){} };
+    canvasEl.addEventListener('pointerup', end);
+    canvasEl.addEventListener('pointercancel', end);
+    canvasEl.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      S.camDist = Math.max(8, Math.min(160, S.camDist * (1 + e.deltaY * 0.001)));
+    }, { passive:false });
+  }
+
+  function init(){
+    if (S.inited) return true;
+    if (typeof THREE === 'undefined'){ setTimeout(init, 80); return false; }
+    S.inited = true;
+
+    const container = $('lab3DCanvas');
+    const w = container.clientWidth || window.innerWidth || 800;
+    const h = container.clientHeight || window.innerHeight || 600;
+
+    S.scene = new THREE.Scene();
+    S.scene.background = new THREE.Color(0x0c0d10);
+
+    S.camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 5000);
+    updateCamera();
+
+    S.renderer = new THREE.WebGLRenderer({ antialias:true, alpha:false });
+    S.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    S.renderer.setSize(w, h);
+    container.appendChild(S.renderer.domElement);
+    setupOrbit(S.renderer.domElement);
+
+    S.fiberGroup = new THREE.Group();
+    S.injectorGroup = new THREE.Group();
+    S.scene.add(S.fiberGroup);
+    S.scene.add(S.injectorGroup);
+
+    const sel = $('lab3DInjector');
+    sel.textContent = '';
+    Object.entries(INJECTORS).forEach(([k, v]) => {
+      const o = document.createElement('option');
+      o.value = k; o.textContent = v.name; sel.appendChild(o);
+    });
+    sel.value = S.injector;
+
+    const lenSlider = $('lab3DLen');
+    const initLen = logToLen(Number(lenSlider.value));
+    $('lab3DLenVal').textContent = formatLen(initLen);
+    S.L_m = initLen;
+    S.visualLen = 14 + 38 * (Math.log10(Math.max(1, initLen)) / 5);
+    S.camDist = 18 + S.visualLen * 0.52;
+
+    rebuildFiber();
+    rebuildRays();
+    setupInspector();
+
+    lenSlider.addEventListener('input', (e) => {
+      const L = logToLen(Number(e.target.value));
+      $('lab3DLenVal').textContent = formatLen(L);
+      setLength(L);
+    });
+    sel.addEventListener('change', (e) => setInjector(e.target.value));
+    $('lab3DRays').addEventListener('input', (e) => {
+      const n = Number(e.target.value);
+      $('lab3DRaysVal').textContent = String(n);
+      setRayCount(n);
+    });
+    $('lab3DBright').addEventListener('input', (e) => {
+      const b = Number(e.target.value);
+      $('lab3DBrightVal').textContent = b.toFixed(1) + '×';
+      setBrightBoost(b);
+    });
+
+    $('labResetCamBtn').addEventListener('click', () => {
+      S.camAngle = 0.42; S.camElev = 0.26; S.camDist = 18 + S.visualLen * 0.52;
+      updateCamera();
+    });
+    $('labCutawayBtn').addEventListener('click', (e) => {
+      S.cutaway = !S.cutaway;
+      e.target.textContent = `Cutaway: ${S.cutaway ? 'ON' : 'OFF'}`;
+      rebuildFiber();
+    });
+    $('lab3DClose').addEventListener('click', close);
+
+    $('trkStartBtn').addEventListener('click', startTracking);
+    $('trkStopBtn').addEventListener('click', stopTracking);
+    $('trkResetBtn').addEventListener('click', resetTracking);
+    $('trkDownloadCsvBtn').addEventListener('click', () => downloadTrackingData('csv'));
+    $('trkDownloadJsonBtn').addEventListener('click', () => downloadTrackingData('json'));
+
+    window.addEventListener('resize', onResize);
+
+    syncFromMain();
+    return true;
+  }
+
+  function open(){
+    const el = $('lab3D');
+    el.classList.add('open');
+    el.setAttribute('aria-hidden', 'false');
+    S.open = true;
+    if (!S.inited && !init()){
+      const t = setInterval(() => {
+        if (init()){ clearInterval(t); afterReady(); }
+      }, 100);
+      setTimeout(() => clearInterval(t), 8000);
+      return;
+    }
+    afterReady();
+  }
+  function afterReady(){
+    onResize();
+    S.lastFrameTime = performance.now();
+    S.lastFpsTime = performance.now();
+    S.frames = 0;
+    if (!S.animId) animate();
+    requestAnimationFrame(() => {
+      syncFromMain();
+      drawChart();
+      renderCrossSectionPane();
+      renderTelemetry();
+      renderTrackerHud();
+    });
+  }
+  function close(){
+    const el = $('lab3D');
+    el.classList.remove('open');
+    el.setAttribute('aria-hidden', 'true');
+    S.open = false;
+    if (S.animId){ cancelAnimationFrame(S.animId); S.animId = null; }
+  }
+
+  return {
+    open, close,
+    isOpen: () => S.open,
+    getInjectorKey: () => S.injector,
+    lambdaToRGB,
+    syncFromMain,
+    _state: S,
+    _injectors: INJECTORS
+  };
+})();
+
+/* =========================================================
+   MODULE 13 — EVENT WIRING
+   ========================================================= */
+const ACTIONS = {
+  applyBtn: () => scheduleRender(),
+  resetAxesAll: () => { PLOT_IDS.forEach(id => state.axisRev[id]++); scheduleRender(); },
+  holdBtn: () => Holds.add(),
+  clearHoldBtn: () => Holds.clear(),
+  extendBtn: () => Domain.extend(),
+  shrinkBtn: () => Domain.shrink(),
+  clampBtn: () => {
+    ['pressureNum','peakPowerNum'].forEach(id => $(id).value = 1);
+    syncSliders();
+    showToast('Clamped pressure & peak power to safe baseline (1 bar, 1 MW)');
+    scheduleRender();
+  },
+  doFit: () => Regression.run(),
+  clearFit: () => Regression.clear(),
+  sendToDesmos: () => sendFitToDesmos(),
+  snapshotBtn: () => Snapshot.save(),
+  loadBtn: () => $('loadFile').click(),
+  lab3DBtn: () => Lab3D.open(),
+  openLabFromRight: () => Lab3D.open()
+};
+
+document.addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if(!b) return;
+  const d = b.dataset;
+  if(d.reset)      return resetAxes(d.reset);
+  if(d.png)        return exportPng(d.png);
+  if(d.open)       return Drawers.open(d.open);
+  if(d.close)      return Drawers.close(d.close);
+  if(d.toggle)     return Drawers.toggle(d.toggle);
+  if(d.holdRemove) return Holds.remove(Number(d.holdRemove));
+  if(b.classList.contains('tab')) return setTab(d.tab);
+  const fn = ACTIONS[b.id];
+  if(fn) fn();
+});
+
+const controls = $('controls');
+controls.addEventListener('input', e => {
+  const el = e.target;
+  if(el.type === 'range' && SLIDER_PAIRS[el.id]){ $(SLIDER_PAIRS[el.id]).value = el.value; scheduleRender(); return; }
+  if(el.type === 'number' && !DOMAIN_IDS.includes(el.id)){
+    const slider = Object.keys(SLIDER_PAIRS).find(r => SLIDER_PAIRS[r] === el.id);
+    if(slider) $(slider).value = el.value;
+    scheduleRender();
+  }
+});
+controls.addEventListener('change', e => {
+  const el = e.target;
+  if(DOMAIN_IDS.includes(el.id)) return Domain.commitManualEdit();
+  if(el.type === 'number'){
+    el.value = numInput(el.id);
+    const slider = Object.keys(SLIDER_PAIRS).find(r => SLIDER_PAIRS[r] === el.id);
+    if(slider) $(slider).value = el.value;
+  }
+  scheduleRender();
+});
+
+$('regPlotSelect').addEventListener('change', () => Regression.refreshSeries());
+$('regType').addEventListener('change', () => $('polyWrap').classList.toggle('hidden', $('regType').value !== 'poly'));
+$('loadFile').addEventListener('change', e => {
+  const file = e.target.files && e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = () => Snapshot.load(String(reader.result));
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+window.addEventListener('resize', () => {
+  const p = readParams();
+  const injKey = Lab3D.getInjectorKey();
+  drawFiberAndInjectorSchematic($('mainCrossPreview'), p, injKey, Lab3D._injectors[injKey]);
+});
+
+syncSliders();
+writeDomain(readDomain());
+render();
+})();
+</script>
+</body>
+</html>
